@@ -17,6 +17,13 @@ function onScanSuccess(decodedText, decodedResult) {
         lastResult = decodedText;
         console.log(`Scan result ${decodedText}`, decodedResult);
         processCheckIn(decodedText);
+        
+        // Restart scanner after successful check-in
+        html5QrcodeScanner.clear().then(() => {
+            setTimeout(() => {
+                startScanning();
+            }, 1000); // Wait 1 second before restarting
+        });
     }
 }
 
@@ -45,7 +52,8 @@ const html5QrcodeScanner = new Html5QrcodeScanner(
     { 
         fps: 10,
         qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
+        aspectRatio: 1.0,
+        defaultCamera: "environment"
     }
 );
 
