@@ -1,5 +1,8 @@
 import streamlit as st
 from streamlit_qrcode_scanner import qrcode_scanner
+import os
+
+my_secret = os.environ['password']
 
 # Initialize session state for attendees
 if 'attendees' not in st.session_state:
