@@ -95,60 +95,100 @@ else:
                 else:
                     st.error("Please enter a valid attendee code (1000-5000)")
 
-    def sync_databases():
+    def sync_from_csv():
         try:
-            # Connect to Google Sheets
-            sheets_creds = os.environ.get('GOOGLE_SHEETS_CREDS')
-            sheet_url = os.environ.get('SHEET_URL')
-            
-            scopes = ['https://www.googleapis.com/auth/spreadsheets']
-            import json
-            credentials = Credentials.from_service_account_info(
-                json.loads(sheets_creds), 
-                scopes=scopes
-            )
-            gc = gspread.authorize(credentials)
-            sheet = gc.open_by_url(sheet_url).sheet1
-            sheet_data = sheet.get_all_records()
-            
-            # Connect to PostgreSQL
-            db_url = os.environ['DATABASE_URL']
-            conn = psycopg2.connect(db_url)
-            cur = conn.cursor()
-            
-            # Create table if not exists
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS attendees (
-                    id VARCHAR PRIMARY KEY,
-                    name VARCHAR NOT NULL,
-                    checked_in BOOLEAN DEFAULT FALSE
-                )
-            """)
-            
-            # Merge data
-            for row in sheet_data:
+            uploaded_file = st.file_uploader("Choose a CSV file", type='csv')
+            if uploaded_file is not None:
+                import pandas as pd
+                import io
+                
+                # Read CSV
+                df = pd.read_csv(uploaded_file)
+                
+                # Connect to PostgreSQL
+                db_url = os.environ['DATABASE_URL']
+                conn = psycopg2.connect(db_url)
+                cur = conn.cursor()
+                
+                # Create table if not exists
                 cur.execute("""
-                    INSERT INTO attendees (id, name, checked_in)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (id) 
-                    DO UPDATE SET 
-                        name = EXCLUDED.name,
-                        checked_in = EXCLUDED.checked_in
-                """, (str(row['ID']), row['Name'], row['CheckedIn'] == 'TRUE'))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
-            # Update session state
-            st.session_state.attendees = [
-                {'id': str(row['ID']), 'name': row['Name'], 'checkedIn': row['CheckedIn'] == 'TRUE'}
-                for row in sheet_data
-            ]
-            return True
-            
+                    CREATE TABLE IF NOT EXISTS teacher_dinner_attendees (
+                        timestamp TEXT,
+                        preferred_prefix TEXT,
+                        first_name TEXT,
+                        last_name TEXT,
+                        suffix TEXT,
+                        school_system TEXT,
+                        school_name TEXT,
+                        grade_subject TEXT,
+                        bringing_plus_one BOOLEAN,
+                        email TEXT,
+                        status TEXT,
+                        school_cleaned TEXT,
+                        id TEXT PRIMARY KEY,
+                        qr_code TEXT,
+                        attendance_response TEXT,
+                        checked_in BOOLEAN DEFAULT FALSE
+                    )
+                """)
+                
+                # Insert data
+                for _, row in df.iterrows():
+                    cur.execute("""
+                        INSERT INTO teacher_dinner_attendees 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id) 
+                        DO UPDATE SET 
+                            timestamp = EXCLUDED.timestamp,
+                            preferred_prefix = EXCLUDED.preferred_prefix,
+                            first_name = EXCLUDED.first_name,
+                            last_name = EXCLUDED.last_name,
+                            suffix = EXCLUDED.suffix,
+                            school_system = EXCLUDED.school_system,
+                            school_name = EXCLUDED.school_name,
+                            grade_subject = EXCLUDED.grade_subject,
+                            bringing_plus_one = EXCLUDED.bringing_plus_one,
+                            email = EXCLUDED.email,
+                            status = EXCLUDED.status,
+                            school_cleaned = EXCLUDED.school_cleaned,
+                            qr_code = EXCLUDED.qr_code,
+                            attendance_response = EXCLUDED.attendance_response
+                    """, (
+                        row['Timestamp'],
+                        row['Preferred Prefix (optional):'],
+                        row['First Name'],
+                        row['Last Name'],
+                        row['Suffix (e.g. Jr., III)'],
+                        row['School System'],
+                        row['School Name'],
+                        row['Grade / Subject (e.g. 3rd Grade / 10th Grade Math)'],
+                        row['Bringing Plus One?'] == 'Yes',
+                        row['Preferred Contact Email'],
+                        row['Status'],
+                        row['School Cleaned'],
+                        row['ID'],
+                        row['qrCode'],
+                        row['Attendance Response'],
+                        False
+                    ))
+                
+                conn.commit()
+                cur.close()
+                conn.close()
+                
+                # Update session state
+                st.session_state.attendees = [
+                    {
+                        'id': str(row['ID']),
+                        'name': f"{row['First Name']} {row['Last Name']}",
+                        'checkedIn': False
+                    }
+                    for _, row in df.iterrows()
+                ]
+                return True
+                
         except Exception as e:
-            st.error(f"Sync failed: {str(e)}")
+            st.error(f"Upload failed: {str(e)}")
             return False
 
     with tab2:
@@ -156,10 +196,10 @@ else:
         
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("🔄 Sync Database", use_container_width=True):
-                with st.spinner("Syncing databases..."):
-                    if sync_databases():
-                        st.success("Databases synced successfully!")
+            if st.button("📤 Upload CSV", use_container_width=True):
+                with st.spinner("Processing CSV..."):
+                    if sync_from_csv():
+                        st.success("CSV data uploaded successfully!")
         
         attendee_data = [
             {"ID": a['id'], "Name": a['name'], "Status": "✅ Checked In" if a['checkedIn'] else "❌ Not Checked In"}
