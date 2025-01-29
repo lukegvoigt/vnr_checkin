@@ -11,6 +11,18 @@ const attendees = [
     { id: '1005', name: 'Frank', checkedIn: false }
 ];
 
+// Initialize the scanner with smaller QR box for mobile
+const html5QrcodeScanner = new Html5QrcodeScanner(
+    "qr-reader",
+    { 
+        fps: 10,
+        qrbox: { width: 200, height: 200 }, // Smaller QR box
+        aspectRatio: 1.0,
+        defaultCamera: "environment",
+        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+    }
+);
+
 function isValidAttendeeId(id) {
     const numId = parseInt(id);
     return !isNaN(numId) && numId >= 1000 && numId <= 5000;
@@ -59,18 +71,6 @@ function processCheckIn(qrCodeData) {
 
     html5QrcodeScanner.pause();
 }
-
-// Initialize the scanner with smaller QR box for mobile
-const html5QrcodeScanner = new Html5QrcodeScanner(
-    "qr-reader",
-    { 
-        fps: 10,
-        qrbox: { width: 200, height: 200 }, // Smaller QR box
-        aspectRatio: 1.0,
-        defaultCamera: "environment",
-        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
-    }
-);
 
 function startScanning() {
     html5QrcodeScanner.render(onScanSuccess, (error) => {

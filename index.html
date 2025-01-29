@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Event Check-in Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/qr-scanner/qr-scanner.umd.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-lg">
@@ -14,10 +14,8 @@
                 Attendee Check-in
             </h1>
             
-            <!-- QR Reader container with responsive width -->
-            <div class="mb-6">
-                <div id="qr-reader" class="w-full max-w-sm mx-auto"></div>
-            </div>
+            <!-- Video element for QR scanning -->
+            <video class="w-full max-w-sm mx-auto mb-6"></video>
             
             <div id="status-display" class="text-center mb-4"></div>
             
