@@ -54,7 +54,7 @@ if not st.session_state.authenticated:
     if st.button("Login"):
         if password == my_secret:
             st.session_state.authenticated = True
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Incorrect password")
 else:
