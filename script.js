@@ -11,7 +11,19 @@ const attendees = [
     { id: '1005', name: 'Frank', checkedIn: false }
 ];
 
+function isValidAttendeeId(id) {
+    // Check if the ID is a number and within valid range (1000-5000)
+    const numId = parseInt(id);
+    return !isNaN(numId) && numId >= 1000 && numId <= 5000;
+}
+
 function onScanSuccess(decodedText, decodedResult) {
+    // Validate the scanned text
+    if (!isValidAttendeeId(decodedText)) {
+        console.log('Invalid QR code value:', decodedText);
+        return; // Silently ignore invalid codes and continue scanning
+    }
+
     if (decodedText !== lastResult) {
         ++countResults;
         lastResult = decodedText;
@@ -53,15 +65,21 @@ const html5QrcodeScanner = new Html5QrcodeScanner(
         fps: 10,
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
-        defaultCamera: "environment"
+        defaultCamera: "environment",
+        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] // Only support QR codes
     }
 );
 
 function startScanning() {
     html5QrcodeScanner.render(onScanSuccess, (error) => {
+        // Only show errors in console, not to user
         console.error(`QR scanning failed: ${error}`);
-        statusDisplay.textContent = `QR scanning failed: ${error}`;
-        statusDisplay.style.color = 'red';
+        
+        // Don't update status display for parsing errors
+        if (!error.includes("QR code parse error")) {
+            statusDisplay.textContent = `Camera error. Please try again.`;
+            statusDisplay.style.color = 'red';
+        }
     });
 }
 
