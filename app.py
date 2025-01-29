@@ -2,6 +2,10 @@ import streamlit as st
 from streamlit_qrcode_scanner import qrcode_scanner
 import os
 from datetime import datetime
+import gspread
+from google.oauth2.service_account import Credentials
+import psycopg2
+from psycopg2.extras import execute_values
 
 # Get password from environment variables
 my_secret = os.environ['password']
@@ -91,8 +95,71 @@ else:
                 else:
                     st.error("Please enter a valid attendee code (1000-5000)")
 
+    def sync_databases():
+        try:
+            # Connect to Google Sheets
+            sheets_creds = os.environ.get('GOOGLE_SHEETS_CREDS')
+            sheet_url = os.environ.get('SHEET_URL')
+            
+            scopes = ['https://www.googleapis.com/auth/spreadsheets']
+            credentials = Credentials.from_service_account_info(
+                eval(sheets_creds), 
+                scopes=scopes
+            )
+            gc = gspread.authorize(credentials)
+            sheet = gc.open_by_url(sheet_url).sheet1
+            sheet_data = sheet.get_all_records()
+            
+            # Connect to PostgreSQL
+            db_url = os.environ['DATABASE_URL']
+            conn = psycopg2.connect(db_url)
+            cur = conn.cursor()
+            
+            # Create table if not exists
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS attendees (
+                    id VARCHAR PRIMARY KEY,
+                    name VARCHAR NOT NULL,
+                    checked_in BOOLEAN DEFAULT FALSE
+                )
+            """)
+            
+            # Merge data
+            for row in sheet_data:
+                cur.execute("""
+                    INSERT INTO attendees (id, name, checked_in)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (id) 
+                    DO UPDATE SET 
+                        name = EXCLUDED.name,
+                        checked_in = EXCLUDED.checked_in
+                """, (str(row['ID']), row['Name'], row['CheckedIn'] == 'TRUE'))
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            # Update session state
+            st.session_state.attendees = [
+                {'id': str(row['ID']), 'name': row['Name'], 'checkedIn': row['CheckedIn'] == 'TRUE'}
+                for row in sheet_data
+            ]
+            return True
+            
+        except Exception as e:
+            st.error(f"Sync failed: {str(e)}")
+            return False
+
     with tab2:
         st.header("Attendee List")
+        
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            if st.button("🔄 Sync Database", use_container_width=True):
+                with st.spinner("Syncing databases..."):
+                    if sync_databases():
+                        st.success("Databases synced successfully!")
+        
         attendee_data = [
             {"ID": a['id'], "Name": a['name'], "Status": "✅ Checked In" if a['checkedIn'] else "❌ Not Checked In"}
             for a in st.session_state.attendees
