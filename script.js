@@ -34,7 +34,7 @@ function onScanSuccess(decodedText, decodedResult) {
         html5QrcodeScanner.clear().then(() => {
             setTimeout(() => {
                 startScanning();
-            }, 1000); // Wait 1 second before restarting
+            }, 2000); // Wait 1 second before restarting
         });
     }
 }
