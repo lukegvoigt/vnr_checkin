@@ -12,16 +12,26 @@ const attendees = [
 ];
 
 function isValidAttendeeId(id) {
-    // Check if the ID is a number and within valid range (1000-5000)
     const numId = parseInt(id);
     return !isNaN(numId) && numId >= 1000 && numId <= 5000;
 }
 
+function showModal(message) {
+    const modal = document.getElementById('confirmModal');
+    const modalMessage = document.getElementById('modal-message');
+    modalMessage.textContent = message;
+    modal.classList.remove('hidden');
+}
+
+function hideModal() {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.add('hidden');
+}
+
 function onScanSuccess(decodedText, decodedResult) {
-    // Validate the scanned text
     if (!isValidAttendeeId(decodedText)) {
         console.log('Invalid QR code value:', decodedText);
-        return; // Silently ignore invalid codes and continue scanning
+        return;
     }
 
     if (decodedText !== lastResult) {
@@ -29,13 +39,6 @@ function onScanSuccess(decodedText, decodedResult) {
         lastResult = decodedText;
         console.log(`Scan result ${decodedText}`, decodedResult);
         processCheckIn(decodedText);
-        
-        // Restart scanner after successful check-in
-        html5QrcodeScanner.clear().then(() => {
-            setTimeout(() => {
-                startScanning();
-            }, 1000); // Wait 1 second before restarting
-        });
     }
 }
 
@@ -46,39 +49,36 @@ function processCheckIn(qrCodeData) {
     if (attendee) {
         if (!attendee.checkedIn) {
             attendee.checkedIn = true;
-            statusDisplay.textContent = `${attendee.name} checked in successfully.`;
-            statusDisplay.style.color = 'green';
+            showModal(`${attendee.name} checked in successfully.`);
         } else {
-            statusDisplay.textContent = `${attendee.name} is already checked in.`;
-            statusDisplay.style.color = 'orange';
+            showModal(`${attendee.name} is already checked in.`);
         }
     } else {
-        statusDisplay.textContent = `Attendee ID ${attendeeId} not found.`;
-        statusDisplay.style.color = 'red';
+        showModal(`Attendee ID ${attendeeId} not found.`);
     }
+
+    html5QrcodeScanner.pause();
 }
 
-// Initialize the scanner
+// Initialize the scanner with smaller QR box for mobile
 const html5QrcodeScanner = new Html5QrcodeScanner(
     "qr-reader",
     { 
         fps: 10,
-        qrbox: { width: 250, height: 250 },
+        qrbox: { width: 200, height: 200 }, // Smaller QR box
         aspectRatio: 1.0,
         defaultCamera: "environment",
-        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] // Only support QR codes
+        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
     }
 );
 
 function startScanning() {
     html5QrcodeScanner.render(onScanSuccess, (error) => {
-        // Only show errors in console, not to user
         console.error(`QR scanning failed: ${error}`);
-        
-        // Don't update status display for parsing errors
         if (!error.includes("QR code parse error")) {
+            const statusDisplay = document.getElementById('status-display');
             statusDisplay.textContent = `Camera error. Please try again.`;
-            statusDisplay.style.color = 'red';
+            statusDisplay.classList.add('text-red-500');
         }
     });
 }
@@ -97,5 +97,13 @@ scanButton.addEventListener('click', () => {
     scanning = !scanning;
 });
 
-// Start scanning automatically when page loads
+document.getElementById('confirmButton').addEventListener('click', () => {
+    hideModal();
+    html5QrcodeScanner.clear().then(() => {
+        setTimeout(() => {
+            startScanning();
+        }, 1000);
+    });
+});
+
 startScanning();
