@@ -7,6 +7,7 @@ from google.oauth2.service_account import Credentials
 import psycopg2
 from psycopg2.extras import execute_values
 import io
+import pandas as pd
 
 # Get password from environment variables
 my_secret = os.environ['password']
