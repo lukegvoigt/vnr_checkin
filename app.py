@@ -38,12 +38,10 @@ def process_check_in(attendee_id):
 
 st.title("Event Check-in System")
 
-tab1, tab2 = st.tabs(["📷 Scan QR", "📋 Attendee List"])
+tab1, tab2 = st.tabs(["📷 Check-in", "📋 Attendee List"])
 
 with tab1:
     st.header("Scan QR Code")
-    
-    # QR Code Scanner
     qr_code = qrcode_scanner(key='scanner')
     
     # Process QR code if one is detected
@@ -53,6 +51,28 @@ with tab1:
             st.write(result)
         else:
             st.error("Invalid QR code format. Please scan a valid attendee QR code.")
+    
+    # Manual Entry Section
+    st.markdown("---")  # Add a visual separator
+    st.subheader("Manual Code Entry")
+    st.caption("If the scanner isn't working, enter the attendee code manually below:")
+    
+    # Create a form for manual entry
+    with st.form("manual_entry", clear_on_submit=True):
+        manual_code = st.text_input("Enter Attendee Code:", 
+                                  placeholder="Enter code (e.g., 1000)",
+                                  help="Enter the number printed below the QR code")
+        
+        submit_button = st.form_submit_button("Check In", 
+                                            use_container_width=True,
+                                            type="primary")
+        
+        if submit_button and manual_code:
+            if is_valid_attendee_id(manual_code):
+                result = process_check_in(manual_code)
+                st.write(result)
+            else:
+                st.error("Please enter a valid attendee code (1000-5000)")
 
 with tab2:
     st.header("Attendee List")
