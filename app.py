@@ -12,18 +12,49 @@ def is_event_date():
     today = datetime.now()
     return today.year == 2025 and today.month == 2 and today.day == 4
 
+import gspread
+import pandas as pd
+from google.oauth2.service_account import Credentials
+
+# Get Google Sheets credentials from environment variable
+sheets_creds = os.environ.get('GOOGLE_SHEETS_CREDS')
+SHEET_URL = os.environ.get('SHEET_URL')
+
+def load_attendees():
+    """Load attendees from Google Sheets"""
+    scopes = ['https://www.googleapis.com/auth/spreadsheets']
+    credentials = Credentials.from_service_account_info(
+        eval(sheets_creds), 
+        scopes=scopes
+    )
+    gc = gspread.authorize(credentials)
+    sheet = gc.open_by_url(SHEET_URL).sheet1
+    data = sheet.get_all_records()
+    return [{'id': str(row['ID']), 'name': row['Name'], 'checkedIn': row['CheckedIn'] == 'TRUE'} 
+            for row in data]
+
+def update_sheet(attendee_id, checked_in):
+    """Update check-in status in Google Sheets"""
+    scopes = ['https://www.googleapis.com/auth/spreadsheets']
+    credentials = Credentials.from_service_account_info(
+        eval(sheets_creds), 
+        scopes=scopes
+    )
+    gc = gspread.authorize(credentials)
+    sheet = gc.open_by_url(SHEET_URL).sheet1
+    
+    # Find the row with matching ID
+    cell = sheet.find(attendee_id)
+    if cell:
+        # Update the CheckedIn column (assuming it's the 3rd column)
+        sheet.update_cell(cell.row, 3, 'TRUE' if checked_in else 'FALSE')
+
 # Initialize session state for attendees and authentication
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = is_event_date()
 
 if 'attendees' not in st.session_state:
-    st.session_state.attendees = [
-        {'id': '1000', 'name': 'Alice', 'checkedIn': False},
-        {'id': '1001', 'name': 'Bob', 'checkedIn': False},
-        {'id': '1002', 'name': 'Charlie', 'checkedIn': False},
-        {'id': '1003', 'name': 'David', 'checkedIn': False},
-        {'id': '1004', 'name': 'Eve', 'checkedIn': False},
-    ]
+    st.session_state.attendees = load_attendees()
 
 def is_valid_attendee_id(id):
     try:
@@ -43,6 +74,7 @@ def process_check_in(attendee_id):
     if attendee:
         if not attendee['checkedIn']:
             attendee['checkedIn'] = True
+            update_sheet(attendee_id, True)
             return f"✅ {attendee['name']} checked in successfully!"
         return f"⚠️ {attendee['name']} is already checked in."
     return f"❌ Attendee ID {attendee_id} not found."
