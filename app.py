@@ -21,11 +21,15 @@ if 'authenticated' not in st.session_state:
     st.session_state.authenticated = is_event_date()
 
 if 'attendees' not in st.session_state:
-    # Initialize with some sample data
+    import pandas as pd
+    df = pd.read_csv('attendees.csv')
     st.session_state.attendees = [
-        {'id': '1001', 'name': 'John Doe', 'checkedIn': False},
-        {'id': '1002', 'name': 'Jane Smith', 'checkedIn': False},
-        # Add more sample attendees as needed
+        {
+            'id': str(row['ID']), 
+            'name': f"{row['First Name']} {row['Last Name']}", 
+            'checkedIn': False
+        }
+        for _, row in df.iterrows()
     ]
 
 def is_valid_attendee_id(id):
@@ -203,8 +207,9 @@ else:
                     if sync_from_csv():
                         st.success("CSV data uploaded successfully!")
         
-        attendee_data = [
-            {"ID": a['id'], "Name": a['name'], "Status": "✅ Checked In" if a['checkedIn'] else "❌ Not Checked In"}
-            for a in st.session_state.attendees
-        ]
+        # Load and display full CSV data
+        df = pd.read_csv('attendees.csv')
+        df['Status'] = df['ID'].map({a['id']: "✅ Checked In" if a['checkedIn'] else "❌ Not Checked In" 
+                                    for a in st.session_state.attendees})
+        st.dataframe(df)
         st.table(attendee_data)
