@@ -11,17 +11,8 @@ const attendees = [
     { id: '1005', name: 'Frank', checkedIn: false }
 ];
 
-// Initialize the scanner with smaller QR box for mobile
-const html5QrcodeScanner = new Html5QrcodeScanner(
-    "qr-reader",
-    { 
-        fps: 10,
-        qrbox: { width: 200, height: 200 }, // Smaller QR box
-        aspectRatio: 1.0,
-        defaultCamera: "environment",
-        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
-    }
-);
+let qrScanner = null;
+let lastResult = null;
 
 function isValidAttendeeId(id) {
     const numId = parseInt(id);
@@ -40,20 +31,6 @@ function hideModal() {
     modal.classList.add('hidden');
 }
 
-function onScanSuccess(decodedText, decodedResult) {
-    if (!isValidAttendeeId(decodedText)) {
-        console.log('Invalid QR code value:', decodedText);
-        return;
-    }
-
-    if (decodedText !== lastResult) {
-        ++countResults;
-        lastResult = decodedText;
-        console.log(`Scan result ${decodedText}`, decodedResult);
-        processCheckIn(decodedText);
-    }
-}
-
 function processCheckIn(qrCodeData) {
     const attendeeId = qrCodeData;
     const attendee = attendees.find(attendee => attendee.id === attendeeId);
@@ -69,41 +46,98 @@ function processCheckIn(qrCodeData) {
         showModal(`Attendee ID ${attendeeId} not found.`);
     }
 
-    html5QrcodeScanner.pause();
+    if (qrScanner) qrScanner.pause();
 }
 
-function startScanning() {
-    html5QrcodeScanner.render(onScanSuccess, (error) => {
-        console.error(`QR scanning failed: ${error}`);
-        if (!error.includes("QR code parse error")) {
-            const statusDisplay = document.getElementById('status-display');
-            statusDisplay.textContent = `Camera error. Please try again.`;
-            statusDisplay.classList.add('text-red-500');
+async function initializeScanner() {
+    console.log('Initializing scanner...');
+    const videoElement = document.querySelector('video');
+    
+    try {
+        qrScanner = new QrScanner(
+            videoElement,
+            result => {
+                console.log('Scan result:', result);
+                if (isValidAttendeeId(result.data)) {
+                    processCheckIn(result.data);
+                }
+            },
+            {
+                returnDetailedScanResult: true,
+                highlightScanRegion: true,
+                highlightCodeOutline: true,
+                preferredCamera: 'environment',
+            }
+        );
+
+        const hasCamera = await QrScanner.hasCamera();
+        console.log('Has camera:', hasCamera);
+        
+        if (!hasCamera) {
+            showModal('No camera found on this device.');
+            return false;
         }
-    });
+
+        // List available cameras
+        const cameras = await QrScanner.listCameras();
+        console.log('Available cameras:', cameras);
+
+        return true;
+    } catch (error) {
+        console.error('Scanner initialization error:', error);
+        showModal('Error initializing scanner: ' + error.message);
+        return false;
+    }
 }
 
 const scanButton = document.getElementById('scanButton');
 let scanning = false;
 
-scanButton.addEventListener('click', () => {
-    if (!scanning) {
-        startScanning();
-        scanButton.textContent = 'Stop Scan';
-    } else {
-        html5QrcodeScanner.clear();
-        scanButton.textContent = 'Start Scan';
+scanButton.addEventListener('click', async () => {
+    console.log('Scan button clicked');
+    
+    if (!qrScanner) {
+        console.log('Initializing scanner on first click');
+        const initialized = await initializeScanner();
+        if (!initialized) {
+            console.error('Failed to initialize scanner');
+            return;
+        }
     }
-    scanning = !scanning;
+
+    if (!scanning) {
+        console.log('Starting scanner...');
+        try {
+            await qrScanner.start();
+            scanButton.textContent = 'Stop Scan';
+            scanning = true;
+            console.log('Scanner started successfully');
+        } catch (error) {
+            console.error('Error starting camera:', error);
+            showModal('Error starting camera: ' + error.message);
+        }
+    } else {
+        console.log('Stopping scanner...');
+        qrScanner.stop();
+        scanButton.textContent = 'Start Scan';
+        scanning = false;
+    }
 });
 
 document.getElementById('confirmButton').addEventListener('click', () => {
     hideModal();
-    html5QrcodeScanner.clear().then(() => {
-        setTimeout(() => {
-            startScanning();
-        }, 1000);
-    });
+    if (qrScanner && scanning) {
+        qrScanner.start();
+    }
 });
 
-startScanning();
+// Initialize scanner when page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Page loaded, initializing scanner...');
+    try {
+        await initializeScanner();
+        console.log('Scanner initialized on page load');
+    } catch (error) {
+        console.error('Error during initial scanner setup:', error);
+    }
+});
