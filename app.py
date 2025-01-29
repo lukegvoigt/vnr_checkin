@@ -102,8 +102,9 @@ else:
             sheet_url = os.environ.get('SHEET_URL')
             
             scopes = ['https://www.googleapis.com/auth/spreadsheets']
+            import json
             credentials = Credentials.from_service_account_info(
-                eval(sheets_creds), 
+                json.loads(sheets_creds), 
                 scopes=scopes
             )
             gc = gspread.authorize(credentials)
