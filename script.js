@@ -39,28 +39,22 @@ function processCheckIn(qrCodeData) {
     }
 }
 
-let html5QrcodeScanner = null;
-
 function startScanning() {
-    if (!html5QrcodeScanner) {
-        html5QrcodeScanner = new Html5QrcodeScanner(
-            "qr-reader", { fps: 10, qrbox: 250 });
-        html5QrcodeScanner.render(onScanSuccess);
-    } else {
-        html5QrcodeScanner.resume(); // if scanner is already initialized, just resume
-    }
+    html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess,
+        (errorMessage) => {
+            console.error(`QR scanning failed: ${errorMessage}`);
+            statusDisplay.textContent = `QR scanning failed: ${errorMessage}`;
+            statusDisplay.style.color = 'red';
+        }
+    );
 }
-
 
 function stopScanning() {
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear();
-        html5QrcodeScanner.destroy();
-        html5QrcodeScanner = null;
-        document.getElementById('qr-reader').innerHTML = ''; // Clear the qr-reader div content
-    }
+    html5QrcodeScanner.stop();
 }
-
 
 const scanButton = document.getElementById('scanButton');
 let scanning = false;
@@ -75,3 +69,5 @@ scanButton.addEventListener('click', () => {
     }
     scanning = !scanning;
 });
+
+startScanning();
