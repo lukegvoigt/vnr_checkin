@@ -1,3 +1,6 @@
+// Set the worker path to point to the CDN
+QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner/qr-scanner-worker.min.js';
+
 var resultContainer = document.getElementById('qr-reader-results');
 var lastResult, countResults = 0;
 const statusDisplay = document.getElementById('status-display');
