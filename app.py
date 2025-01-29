@@ -9,6 +9,81 @@ from psycopg2.extras import execute_values
 import io
 import pandas as pd
 
+def setup_database():
+    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+    cur = conn.cursor()
+    
+    # Create attendees table
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS attendees (
+        id TEXT PRIMARY KEY,
+        prefix TEXT,
+        first_name TEXT,
+        last_name TEXT,
+        suffix TEXT,
+        school_system TEXT,
+        school_name TEXT,
+        grade_subject TEXT,
+        bringing_plus_one BOOLEAN,
+        email TEXT,
+        status TEXT,
+        school_cleaned TEXT,
+        qr_code TEXT,
+        attendance_response TEXT,
+        checked_in BOOLEAN DEFAULT FALSE
+    )
+    """)
+    
+    # Import CSV data
+    df = pd.read_csv('attendees.csv')
+    
+    # Prepare data for insertion
+    data = [(
+        str(row['ID']),
+        row['Preferred Prefix (optional):'],
+        row['First Name'],
+        row['Last Name'],
+        row['Suffix (e.g. Jr., III)'],
+        row['School System'],
+        row['School Name'],
+        row['Grade / Subject (e.g. 3rd Grade / 10th Grade Math)'],
+        row['Bringing Plus One?'] == 'Yes',
+        row['Preferred Contact Email'],
+        row['Status'],
+        row['School Cleaned'],
+        row['qrCode'],
+        row['Attendance Response'],
+        False
+    ) for _, row in df.iterrows()]
+    
+    # Insert data
+    cur.executemany("""
+    INSERT INTO attendees (
+        id, prefix, first_name, last_name, suffix, 
+        school_system, school_name, grade_subject, 
+        bringing_plus_one, email, status, school_cleaned,
+        qr_code, attendance_response, checked_in
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (id) DO UPDATE SET
+        prefix = EXCLUDED.prefix,
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        suffix = EXCLUDED.suffix,
+        school_system = EXCLUDED.school_system,
+        school_name = EXCLUDED.school_name,
+        grade_subject = EXCLUDED.grade_subject,
+        bringing_plus_one = EXCLUDED.bringing_plus_one,
+        email = EXCLUDED.email,
+        status = EXCLUDED.status,
+        school_cleaned = EXCLUDED.school_cleaned,
+        qr_code = EXCLUDED.qr_code,
+        attendance_response = EXCLUDED.attendance_response
+    """, data)
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
 # Get password from environment variables
 my_secret = os.environ['password']
 
