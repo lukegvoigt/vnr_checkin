@@ -210,7 +210,9 @@ else:
         
         # Load and display full CSV data
         df = pd.read_csv('attendees.csv')
-        df['Status'] = df['ID'].map({a['id']: "✅ Checked In" if a['checkedIn'] else "❌ Not Checked In" 
-                                    for a in st.session_state.attendees})
+        # Create status mapping dictionary first
+        status_mapping = {str(a['id']): "✅ Checked In" if a['checkedIn'] else "❌ Not Checked In" 
+                         for a in st.session_state.attendees}
+        df['Status'] = df['ID'].astype(str).map(status_mapping)
         st.dataframe(df)
         st.table(attendee_data)
