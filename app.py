@@ -6,6 +6,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import psycopg2
 from psycopg2.extras import execute_values
+import io
 
 # Get password from environment variables
 my_secret = os.environ['password']
@@ -100,19 +101,20 @@ else:
             uploaded_file = st.file_uploader("Choose a CSV file", type='csv')
             if uploaded_file is not None:
                 import pandas as pd
-                import io
+                
                 
                 # Read CSV
                 df = pd.read_csv(uploaded_file)
                 
                 # Connect to PostgreSQL
                 db_url = os.environ['DATABASE_URL']
+                print(db_url)
                 conn = psycopg2.connect(db_url)
                 cur = conn.cursor()
                 
                 # Create table if not exists
                 cur.execute("""
-                    CREATE TABLE IF NOT EXISTS teacher_dinner_attendees (
+                    CREATE TABLE IF NOT EXISTS tad_attendees (
                         timestamp TEXT,
                         preferred_prefix TEXT,
                         first_name TEXT,
@@ -135,7 +137,7 @@ else:
                 # Insert data
                 for _, row in df.iterrows():
                     cur.execute("""
-                        INSERT INTO teacher_dinner_attendees 
+                        INSERT INTO tad_attendees 
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id) 
                         DO UPDATE SET 
