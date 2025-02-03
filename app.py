@@ -196,27 +196,28 @@ else:
                     st.markdown(":green[Found:]")
                     st.markdown(f":green[{attendee['name']}]")
                     st.markdown(f":green[{attendee['school_system']}]")
-                    if attendee['plus_one']:
-                        if st.button(":green[+1]", key=f"plus_one_manual_{manual_code}"):
-                            try:
-                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                cur = conn.cursor()
-                                cur.execute("""
-                                    UPDATE attendees 
-                                    SET checked_in = 2 
-                                    WHERE qr_code = %s
-                                """, (manual_code,))
-                                conn.commit()
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error updating plus one status: {e}")
-                            finally:
-                                if cur:
-                                    cur.close()
-                                if conn:
-                                    conn.close()
                 else:
                     st.error("Attendee not found")
+
+        if manual_code and attendee and attendee.get('plus_one'):
+            if st.button(":green[+1]", key=f"plus_one_manual_{manual_code}"):
+                try:
+                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                    cur = conn.cursor()
+                    cur.execute("""
+                        UPDATE attendees 
+                        SET checked_in = 2 
+                        WHERE qr_code = %s
+                    """, (manual_code,))
+                    conn.commit()
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error updating plus one status: {e}")
+                finally:
+                    if cur:
+                        cur.close()
+                    if conn:
+                        conn.close()
 
     def sync_from_csv():
         try:
