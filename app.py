@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_qrcode_scanner import qrcode_scanner
 import os
 from datetime import datetime
+import time
 import psycopg2
 import pandas as pd
 
@@ -444,27 +445,43 @@ else:
             st.dataframe(df)
 
             # Add Clear All button with password protection
-            if st.button("Clear All Check-ins", type="secondary"):
-                clear_password = st.text_input("Enter admin password to clear:", type="password")
-                if clear_password:
-                    if clear_password == my_secret:
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            # Update both checked_in and status columns
-                            cur.execute("UPDATE attendees SET checked_in = 0, status = 'Not Checked In';")
-                            conn.commit()
-                            st.success("All check-ins cleared successfully!")
-                            st.experimental_rerun()
-                        except Exception as e:
-                            st.error(f"Error clearing check-ins: {e}")
-                        finally:
-                            if cur:
+            clear_col1, clear_col2 = st.columns([1, 3])
+            with clear_col1:
+                if st.button("Clear All Check-ins", type="secondary"):
+                    clear_password = st.text_input("Enter admin password to clear:", type="password", key="clear_password")
+                    if clear_password:
+                        if clear_password == my_secret:
+                            try:
+                                # Close existing connection first
+                                if 'conn' in locals():
+                                    conn.close()
+                                if 'cur' in locals():
+                                    cur.close()
+                                
+                                # Create fresh connection
+                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                cur = conn.cursor()
+                                
+                                # Update checked_in status
+                                cur.execute("UPDATE attendees SET checked_in = 0;")
+                                conn.commit()
+                                
+                                # Force close connection
                                 cur.close()
-                            if conn:
                                 conn.close()
-                    else:
-                        st.error("Incorrect password")
+                                
+                                st.success("All check-ins cleared!")
+                                time.sleep(1)  # Brief pause to show success message
+                                st.rerun()  # Force complete page refresh
+                            except Exception as e:
+                                st.error(f"Error clearing check-ins: {e}")
+                            finally:
+                                if 'cur' in locals() and cur:
+                                    cur.close()
+                                if 'conn' in locals() and conn:
+                                    conn.close()
+                        else:
+                            st.error("Incorrect password")
 
             # Add Plus One buttons for eligible attendees
             st.write("### Plus One Check-in")
