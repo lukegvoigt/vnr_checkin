@@ -188,6 +188,7 @@ else:
         st.subheader("Manual Code Entry")
         st.caption("If the scanner isn't working, enter the attendee code manually below:")
 
+        manual_attendee = None
         with st.form("manual_entry", clear_on_submit=True):
             manual_code = st.text_input("Enter Attendee Code:", 
                                       placeholder="Enter code (e.g., 1000)",
@@ -198,15 +199,17 @@ else:
                                                 type="primary")
 
             if submit_button and manual_code:
-                attendee = get_attendee_info(manual_code)
-                if attendee:
+                manual_attendee = get_attendee_info(manual_code)
+                if manual_attendee:
                     st.markdown(":green[Found:]")
-                    st.markdown(f":green[{attendee['name']}]")
-                    st.markdown(f":green[{attendee['school_system']}]")
+                    st.markdown(f":green[{manual_attendee['name']}]")
+                    st.markdown(f":green[{manual_attendee['school_system']}]")
+                    if manual_attendee['checked_in'] > 0:
+                        st.warning("Attendee already checked in")
                 else:
                     st.error("Attendee not found")
 
-        if manual_code and attendee and attendee.get('plus_one'):
+        if manual_code and manual_attendee and manual_attendee.get('plus_one'):
             if st.button("+1", key=f"plus_one_manual_{manual_code}", type="primary"):
                 try:
                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
