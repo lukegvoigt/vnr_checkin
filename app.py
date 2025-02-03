@@ -452,27 +452,29 @@ else:
                     if clear_password:
                         if clear_password == my_secret:
                             try:
-                                # Close existing connection first
+                                # Ensure any existing connections are closed
                                 if 'conn' in locals():
-                                    conn.close()
+                                    if conn:
+                                        conn.close()
                                 if 'cur' in locals():
-                                    cur.close()
+                                    if cur:
+                                        cur.close()
                                 
-                                # Create fresh connection
+                                # Create new connection
                                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                 cur = conn.cursor()
                                 
-                                # Update checked_in status
-                                cur.execute("UPDATE attendees SET checked_in = 0;")
+                                # Update both checked_in and status
+                                cur.execute("UPDATE attendees SET checked_in = 0, status = 'Not Checked In';")
                                 conn.commit()
                                 
-                                # Force close connection
+                                # Properly close connections
                                 cur.close()
                                 conn.close()
                                 
-                                st.success("All check-ins cleared!")
-                                time.sleep(1)  # Brief pause to show success message
-                                st.rerun()  # Force complete page refresh
+                                st.success("✅ All check-ins have been cleared!")
+                                time.sleep(0.5)
+                                st.rerun()
                             except Exception as e:
                                 st.error(f"Error clearing check-ins: {e}")
                             finally:
