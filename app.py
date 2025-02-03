@@ -451,10 +451,11 @@ else:
                         try:
                             conn = psycopg2.connect(os.environ['DATABASE_URL'])
                             cur = conn.cursor()
-                            cur.execute("UPDATE attendees SET checked_in = 0, status = 'Not Checked In'")
+                            # Update both checked_in and status columns
+                            cur.execute("UPDATE attendees SET checked_in = 0, status = 'Not Checked In';")
                             conn.commit()
                             st.success("All check-ins cleared successfully!")
-                            st.rerun()
+                            st.experimental_rerun()
                         except Exception as e:
                             st.error(f"Error clearing check-ins: {e}")
                         finally:
