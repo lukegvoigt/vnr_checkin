@@ -146,9 +146,7 @@ else:
             attendee = get_attendee_info(qr_code)
             if attendee:
                 if attendee['checked_in'] > 0:
-                    st.warning("Attendee already checked in")
-                    st.markdown(f":yellow[{attendee['name']}]")
-                    st.markdown(f":yellow[{attendee['school_system']}]")
+                    st.warning(f"Attendee already checked in: {attendee['name']} - {attendee['school_system']}")
                 else:
                     st.markdown(":green[Found:]")
                     st.markdown(f":green[{attendee['name']}]")
@@ -199,9 +197,7 @@ else:
                 manual_attendee = get_attendee_info(manual_code)
                 if manual_attendee:
                     if manual_attendee['checked_in'] > 0:
-                        st.warning("Attendee already checked in")
-                        st.markdown(f":yellow[{manual_attendee['name']}]")
-                        st.markdown(f":yellow[{manual_attendee['school_system']}]")
+                        st.warning(f"Attendee already checked in: {manual_attendee['name']} - {manual_attendee['school_system']}")
                     else:
                         st.markdown(":green[Found:]")
                         st.markdown(f":green[{manual_attendee['name']}]")
