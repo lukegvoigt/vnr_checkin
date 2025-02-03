@@ -25,7 +25,10 @@ def get_attendee_info(code):
             # Update their checked_in status to 1
             cur.execute("""
                 UPDATE attendees 
-                SET checked_in = 1 
+                SET checked_in = CASE 
+                    WHEN checked_in = 0 THEN 1
+                    ELSE checked_in
+                END
                 WHERE qr_code = %s
             """, (code,))
             
