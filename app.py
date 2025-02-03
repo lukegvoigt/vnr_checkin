@@ -218,6 +218,59 @@ else:
                 else:
                     st.error("Attendee not found")
 
+        st.markdown("---")
+        st.subheader("Name Search")
+        search_query = st.text_input("Search by name:", placeholder="Enter first or last name")
+        
+        if search_query:
+            try:
+                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                cur = conn.cursor()
+                
+                # Search for matching names
+                cur.execute("""
+                    SELECT qr_code, first_name, last_name, school_system, school_cleaned, grade_subject, checked_in 
+                    FROM attendees 
+                    WHERE LOWER(first_name) LIKE LOWER(%s) 
+                    OR LOWER(last_name) LIKE LOWER(%s)
+                    ORDER BY last_name, first_name
+                """, (f'%{search_query}%', f'%{search_query}%'))
+                
+                results = cur.fetchall()
+                
+                if results:
+                    for result in results:
+                        qr_code, first_name, last_name, school_system, school, grade, checked_in = result
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.write(f"**{first_name} {last_name}**")
+                            st.write(f"School System: {school_system}")
+                            st.write(f"School: {school}")
+                            st.write(f"Grade/Subject: {grade}")
+                        with col2:
+                            if checked_in == 0:
+                                if st.button("✅", key=f"search_{qr_code}", type="primary"):
+                                    cur.execute("""
+                                        UPDATE attendees 
+                                        SET checked_in = 1 
+                                        WHERE qr_code = %s
+                                    """, (qr_code,))
+                                    conn.commit()
+                                    st.rerun()
+                            else:
+                                st.write("Already checked in")
+                        st.markdown("---")
+                else:
+                    st.warning("No matching names found")
+                
+            except Exception as e:
+                st.error(f"Error searching database: {e}")
+            finally:
+                if cur:
+                    cur.close()
+                if conn:
+                    conn.close()
+
         if manual_code and manual_attendee and manual_attendee.get('plus_one'):
             col1, col2 = st.columns(2)
             with col1:
