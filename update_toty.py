@@ -19,8 +19,15 @@ try:
         WHERE bringing_plus_one = true;
     """)
     
+    # Update superintendents to toty=3
+    cur.execute("""
+        UPDATE attendees 
+        SET toty = 3 
+        WHERE email IN ('sandrawilcher@lowndes.k12.ga.us', 'clockhart@gocats.org');
+    """)
+    
     conn.commit()
-    print("Successfully added and updated toty column")
+    print("Successfully added and updated toty column and superintendent values")
     
 except Exception as e:
     print(f"Error: {e}")
