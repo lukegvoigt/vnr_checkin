@@ -90,21 +90,9 @@ def is_event_date():
     today = datetime.now()
     return today.year == 2025 and today.month == 2 and today.day == 4
 
-# Initialize session state for attendees and authentication
+# Initialize authentication state
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = is_event_date()
-
-if 'attendees' not in st.session_state:
-    import pandas as pd
-    df = pd.read_csv('attendees.csv')
-    st.session_state.attendees = [
-        {
-            'id': str(row['ID']), 
-            'name': f"{row['First Name']} {row['Last Name']}", 
-            'checkedIn': False
-        }
-        for _, row in df.iterrows()
-    ]
 
 def is_valid_attendee_id(id):
     try:
@@ -271,18 +259,30 @@ else:
     with tab2:
         st.header("Attendee List")
         
-        col1, col2 = st.columns([3, 1])
-        with col2:
-            if st.button("📤 Upload CSV", use_container_width=True):
-                with st.spinner("Processing CSV..."):
-                    if sync_from_csv():
-                        st.success("CSV data uploaded successfully!")
-        
-        # Load and display full CSV data
-        df = pd.read_csv('attendees.csv')
-        # Create status mapping dictionary first
-        status_mapping = {str(a['id']): "✅ Checked In" if a['checkedIn'] else "❌ Not Checked In" 
-                         for a in st.session_state.attendees}
-        df['Status'] = df['ID'].astype(str).map(status_mapping)
-        st.dataframe(df)
-        st.table(attendee_data)
+        # Query and display attendees from database
+        try:
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            
+            cur.execute("""
+                SELECT first_name, last_name, school_system, bringing_plus_one, checked_in 
+                FROM attendees
+                ORDER BY last_name, first_name
+            """)
+            
+            attendees = cur.fetchall()
+            
+            # Convert to dataframe for display
+            df = pd.DataFrame(attendees, 
+                            columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In'])
+            df['Status'] = df['Checked In'].map({True: "✅ Checked In", False: "❌ Not Checked In"})
+            
+            st.dataframe(df)
+            
+        except Exception as e:
+            st.error(f"Database error: {e}")
+        finally:
+            if cur:
+                cur.close()
+            if conn:
+                conn.close()
