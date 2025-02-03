@@ -22,15 +22,14 @@ def setup_database():
         last_name TEXT,
         suffix TEXT,
         school_system TEXT,
-        school_name TEXT,
         grade_subject TEXT,
-        bringing_plus_one BOOLEAN,
+        bringing_plus_one TEXT,
         email TEXT,
         status TEXT,
         school_cleaned TEXT,
         qr_code TEXT,
         attendance_response TEXT,
-        checked_in BOOLEAN DEFAULT FALSE
+        checked_in TEXT
     )
     """)
     
@@ -45,7 +44,6 @@ def setup_database():
         row['Last Name'],
         row['Suffix (e.g. Jr., III)'],
         row['School System'],
-        row['School Name'],
         row['Grade / Subject (e.g. 3rd Grade / 10th Grade Math)'],
         row['Bringing Plus One?'] == 'Yes',
         row['Preferred Contact Email'],
@@ -60,7 +58,7 @@ def setup_database():
     cur.executemany("""
     INSERT INTO attendees (
         id, prefix, first_name, last_name, suffix, 
-        school_system, school_name, grade_subject, 
+        school_system, grade_subject, 
         bringing_plus_one, email, status, school_cleaned,
         qr_code, attendance_response, checked_in
     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -70,7 +68,6 @@ def setup_database():
         last_name = EXCLUDED.last_name,
         suffix = EXCLUDED.suffix,
         school_system = EXCLUDED.school_system,
-        school_name = EXCLUDED.school_name,
         grade_subject = EXCLUDED.grade_subject,
         bringing_plus_one = EXCLUDED.bringing_plus_one,
         email = EXCLUDED.email,
