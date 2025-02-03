@@ -138,8 +138,9 @@ else:
         if qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
-                st.success(f"Found: {attendee['name']}")
-                st.write(f"School System: {attendee['school_system']}")
+                st.markdown(":green[Found:]")
+                st.markdown(f":green[{attendee['name']}]")
+                st.markdown(f":green[{attendee['school_system']}]")
                 if attendee['plus_one']:
                     st.markdown(":green[PLUS ONE]")
             else:
@@ -161,8 +162,9 @@ else:
             if submit_button and manual_code:
                 attendee = get_attendee_info(manual_code)
                 if attendee:
-                    st.success(f"Found: {attendee['name']}")
-                    st.write(f"School System: {attendee['school_system']}")
+                    st.markdown(":green[Found:]")
+                    st.markdown(f":green[{attendee['name']}]")
+                    st.markdown(f":green[{attendee['school_system']}]")
                     if attendee['plus_one']:
                         st.markdown(":green[PLUS ONE]")
                 else:
