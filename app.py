@@ -10,6 +10,7 @@ def get_attendee_info(code):
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
         
+        # First check if the attendee exists and get their info
         cur.execute("""
             SELECT first_name, last_name, school_system, bringing_plus_one 
             FROM attendees 
@@ -20,6 +21,16 @@ def get_attendee_info(code):
         
         if result:
             first_name, last_name, school_system, plus_one = result
+            
+            # Update their checked_in status
+            cur.execute("""
+                UPDATE attendees 
+                SET checked_in = TRUE 
+                WHERE qr_code = %s
+            """, (code,))
+            
+            conn.commit()
+            
             info = {
                 'name': f"{first_name} {last_name}",
                 'school_system': school_system,
