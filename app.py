@@ -155,11 +155,14 @@ else:
         if qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
-                st.markdown(":green[Found:]")
-                st.markdown(f":green[{attendee['name']}]")
-                st.markdown(f":green[{attendee['school_system']}]")
                 if attendee['checked_in'] > 0:
                     st.warning("Attendee already checked in")
+                    st.markdown(f":yellow[{attendee['name']}]")
+                    st.markdown(f":yellow[{attendee['school_system']}]")
+                else:
+                    st.markdown(":green[Found:]")
+                    st.markdown(f":green[{attendee['name']}]")
+                    st.markdown(f":green[{attendee['school_system']}]")
                 if attendee['plus_one']:
                     if st.button("+1", key=f"plus_one_qr_{qr_code}", type="primary"):
                         try:
@@ -199,11 +202,14 @@ else:
             if submit_button and manual_code:
                 manual_attendee = get_attendee_info(manual_code)
                 if manual_attendee:
-                    st.markdown(":green[Found:]")
-                    st.markdown(f":green[{manual_attendee['name']}]")
-                    st.markdown(f":green[{manual_attendee['school_system']}]")
                     if manual_attendee['checked_in'] > 0:
                         st.warning("Attendee already checked in")
+                        st.markdown(f":yellow[{manual_attendee['name']}]")
+                        st.markdown(f":yellow[{manual_attendee['school_system']}]")
+                    else:
+                        st.markdown(":green[Found:]")
+                        st.markdown(f":green[{manual_attendee['name']}]")
+                        st.markdown(f":green[{manual_attendee['school_system']}]")
                 else:
                     st.error("Attendee not found")
 
