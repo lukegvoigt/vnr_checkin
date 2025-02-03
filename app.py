@@ -9,23 +9,23 @@ def get_attendee_info(code):
     try:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
-        
+
         # First check if the attendee exists and get their info
         cur.execute("""
             SELECT first_name, last_name, school_system, bringing_plus_one 
             FROM attendees 
             WHERE qr_code = %s
         """, (code,))
-        
+
         result = cur.fetchone()
-        
+
         if result:
             first_name, last_name, school_system, plus_one = result
-            
+
             # First get current checked_in status without updating
             cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
             checked_in = cur.fetchone()[0]
-            
+
             info = {
                 'name': f"{first_name} {last_name}",
                 'school_system': school_system,
@@ -34,7 +34,7 @@ def get_attendee_info(code):
             }
             return info
         return None
-        
+
     except Exception as e:
         st.error(f"Database error: {e}")
         return None
@@ -43,7 +43,7 @@ def get_attendee_info(code):
             cur.close()
         if conn:
             conn.close()
-    
+
     # Prepare data for insertion
     data = [(
         str(row['ID']),
@@ -61,7 +61,7 @@ def get_attendee_info(code):
         row['Attendance Response'],
         False
     ) for _, row in df.iterrows()]
-    
+
     # Insert data
     cur.executemany("""
     INSERT INTO attendees (
@@ -84,7 +84,7 @@ def get_attendee_info(code):
         qr_code = EXCLUDED.qr_code,
         attendance_response = EXCLUDED.attendance_response
     """, data)
-    
+
     conn.commit()
     cur.close()
     conn.close()
@@ -154,24 +154,30 @@ else:
                     st.markdown(f":green[{attendee['name']}]")
                     st.markdown(f":green[{attendee['school_system']}]")
                 if attendee['plus_one']:
-                    if st.button("+1", key=f"plus_one_qr_{qr_code}", type="primary"):
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE attendees 
-                                SET checked_in = 2 
-                                WHERE qr_code = %s
-                            """, (qr_code,))
-                            conn.commit()
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("+1", key=f"plus_one_qr_{qr_code}", type="primary"):
+                            try:
+                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                cur = conn.cursor()
+                                cur.execute("""
+                                    UPDATE attendees 
+                                    SET checked_in = 2 
+                                    WHERE qr_code = %s
+                                """, (qr_code,))
+                                conn.commit()
+                            except Exception as e:
+                                st.error(f"Error updating plus one status: {e}")
+                            finally:
+                                if cur:
+                                    cur.close()
+                                if conn:
+                                    conn.close()
                             st.rerun()
-                        except Exception as e:
-                            st.error(f"Error updating plus one status: {e}")
-                        finally:
-                            if cur:
-                                cur.close()
-                            if conn:
-                                conn.close()
+                    with col2:
+                        if attendee['checked_in'] == 2:
+                            st.write(":green[(+1 added)]")
+
             else:
                 st.error("Attendee not found")
 
@@ -217,41 +223,46 @@ else:
                     st.error("Attendee not found")
 
         if manual_code and manual_attendee and manual_attendee.get('plus_one'):
-            if st.button("+1", key=f"plus_one_manual_{manual_code}", type="primary"):
-                try:
-                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                    cur = conn.cursor()
-                    cur.execute("""
-                        UPDATE attendees 
-                        SET checked_in = 2 
-                        WHERE qr_code = %s
-                    """, (manual_code,))
-                    conn.commit()
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("+1", key=f"plus_one_manual_{manual_code}", type="primary"):
+                    try:
+                        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                        cur = conn.cursor()
+                        cur.execute("""
+                            UPDATE attendees 
+                            SET checked_in = 2 
+                            WHERE qr_code = %s
+                        """, (manual_code,))
+                        conn.commit()
+                    except Exception as e:
+                        st.error(f"Error updating plus one status: {e}")
+                    finally:
+                        if cur:
+                            cur.close()
+                        if conn:
+                            conn.close()
                     st.rerun()
-                except Exception as e:
-                    st.error(f"Error updating plus one status: {e}")
-                finally:
-                    if cur:
-                        cur.close()
-                    if conn:
-                        conn.close()
+            with col2:
+                if manual_attendee['checked_in'] == 2:
+                    st.write(":green[(+1 added)]")
 
     def sync_from_csv():
         try:
             uploaded_file = st.file_uploader("Choose a CSV file", type='csv')
             if uploaded_file is not None:
                 import pandas as pd
-                
-                
+
+
                 # Read CSV
                 df = pd.read_csv(uploaded_file)
-                
+
                 # Connect to PostgreSQL
                 db_url = os.environ['DATABASE_URL']
                 print(db_url)
                 conn = psycopg2.connect(db_url)
                 cur = conn.cursor()
-                
+
                 # Create table if not exists
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS tad_attendees (
@@ -268,7 +279,7 @@ else:
                         id TEXT PRIMARY KEY
                     )
                 """)
-                
+
                 # Insert data
                 for _, row in df.iterrows():
                     cur.execute("""
@@ -304,11 +315,11 @@ else:
                         row['Attendance Response'],
                         False
                     ))
-                
+
                 conn.commit()
                 cur.close()
                 conn.close()
-                
+
                 # Update session state
                 st.session_state.attendees = [
                     {
@@ -319,64 +330,69 @@ else:
                     for _, row in df.iterrows()
                 ]
                 return True
-                
+
         except Exception as e:
             st.error(f"Upload failed: {str(e)}")
             return False
 
     with tab2:
         st.header("Attendee List")
-        
+
         # Query and display attendees from database
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-            
+
             cur.execute("""
                 SELECT first_name, last_name, school_system, bringing_plus_one, checked_in 
                 FROM attendees
                 ORDER BY last_name, first_name
             """)
-            
+
             attendees = cur.fetchall()
-            
+
             # Convert to dataframe for display
             df = pd.DataFrame(attendees, 
                             columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In'])
-            
+
             # Create status column based on checked_in value
             df['Status'] = df['Checked In'].map({
                 0: "❌ Not Checked In",
                 1: "✅ Checked In",
                 2: "✅ Checked In with Plus One"
             })
-            
+
             # Display the dataframe
             st.dataframe(df)
-            
+
             # Add Plus One buttons for eligible attendees
             st.write("### Plus One Check-in")
             for idx, row in df.iterrows():
                 if row['Plus One'] and row['Checked In'] == 1:
-                    if st.button(f":green[+ One] for {row['First Name']} {row['Last Name']}", key=f"plus_one_{idx}"):
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE attendees 
-                                SET checked_in = 2 
-                                WHERE first_name = %s AND last_name = %s
-                            """, (row['First Name'], row['Last Name']))
-                            conn.commit()
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button(f":green[+ One] for {row['First Name']} {row['Last Name']}", key=f"plus_one_{idx}", type="primary"):
+                            try:
+                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                cur = conn.cursor()
+                                cur.execute("""
+                                    UPDATE attendees 
+                                    SET checked_in = 2 
+                                    WHERE first_name = %s AND last_name = %s
+                                """, (row['First Name'], row['Last Name']))
+                                conn.commit()
+                            except Exception as e:
+                                st.error(f"Error updating plus one status: {e}")
+                            finally:
+                                if cur:
+                                    cur.close()
+                                if conn:
+                                    conn.close()
                             st.rerun()
-                        except Exception as e:
-                            st.error(f"Error updating plus one status: {e}")
-                        finally:
-                            if cur:
-                                cur.close()
-                            if conn:
-                                conn.close()
-            
+                    with col2:
+                        if row['Checked In'] == 2:
+                            st.write(":green[(+1 added)]")
+
         except Exception as e:
             st.error(f"Database error: {e}")
         finally:
