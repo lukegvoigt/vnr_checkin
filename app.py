@@ -22,10 +22,10 @@ def get_attendee_info(code):
         if result:
             first_name, last_name, school_system, plus_one = result
             
-            # Update their checked_in status
+            # Update their checked_in status to 1
             cur.execute("""
                 UPDATE attendees 
-                SET checked_in = TRUE 
+                SET checked_in = 1 
                 WHERE qr_code = %s
             """, (code,))
             
@@ -288,9 +288,39 @@ else:
             # Convert to dataframe for display
             df = pd.DataFrame(attendees, 
                             columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In'])
-            df['Status'] = df['Checked In'].map({True: "✅ Checked In", False: "❌ Not Checked In"})
             
+            # Create status column based on checked_in value
+            df['Status'] = df['Checked In'].map({
+                0: "❌ Not Checked In",
+                1: "✅ Checked In",
+                2: "✅ Checked In with Plus One"
+            })
+            
+            # Display the dataframe
             st.dataframe(df)
+            
+            # Add Plus One buttons for eligible attendees
+            st.write("### Plus One Check-in")
+            for idx, row in df.iterrows():
+                if row['Plus One'] and row['Checked In'] == 1:
+                    if st.button(f":green[+ One] for {row['First Name']} {row['Last Name']}", key=f"plus_one_{idx}"):
+                        try:
+                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                            cur = conn.cursor()
+                            cur.execute("""
+                                UPDATE attendees 
+                                SET checked_in = 2 
+                                WHERE first_name = %s AND last_name = %s
+                            """, (row['First Name'], row['Last Name']))
+                            conn.commit()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error updating plus one status: {e}")
+                        finally:
+                            if cur:
+                                cur.close()
+                            if conn:
+                                conn.close()
             
         except Exception as e:
             st.error(f"Database error: {e}")

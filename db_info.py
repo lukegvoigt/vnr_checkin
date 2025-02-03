@@ -25,7 +25,7 @@ def create_attendees_table():
             school_cleaned TEXT,
             qr_code TEXT,
             attendance_response TEXT,
-            checked_in BOOLEAN DEFAULT FALSE
+            checked_in INTEGER DEFAULT 0
         );
         """)
         
