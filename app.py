@@ -2,39 +2,40 @@ import streamlit as st
 from streamlit_qrcode_scanner import qrcode_scanner
 import os
 from datetime import datetime
-import gspread
-from google.oauth2.service_account import Credentials
 import psycopg2
-from psycopg2.extras import execute_values
-import io
 import pandas as pd
 
-def setup_database():
-    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-    cur = conn.cursor()
-    
-    # Create attendees table
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS attendees (
-        id TEXT PRIMARY KEY,
-        prefix TEXT,
-        first_name TEXT,
-        last_name TEXT,
-        suffix TEXT,
-        school_system TEXT,
-        grade_subject TEXT,
-        bringing_plus_one TEXT,
-        email TEXT,
-        status TEXT,
-        school_cleaned TEXT,
-        qr_code TEXT,
-        attendance_response TEXT,
-        checked_in TEXT
-    )
-    """)
-    
-    # Import CSV data
-    df = pd.read_csv('attendees.csv')
+def get_attendee_info(code):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT first_name, last_name, school_system, bringing_plus_one 
+            FROM attendees 
+            WHERE qr_code = %s
+        """, (code,))
+        
+        result = cur.fetchone()
+        
+        if result:
+            first_name, last_name, school_system, plus_one = result
+            info = {
+                'name': f"{first_name} {last_name}",
+                'school_system': school_system,
+                'plus_one': plus_one
+            }
+            return info
+        return None
+        
+    except Exception as e:
+        st.error(f"Database error: {e}")
+        return None
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
     
     # Prepare data for insertion
     data = [(
@@ -147,11 +148,14 @@ else:
         qr_code = qrcode_scanner(key='scanner')
 
         if qr_code:
-            if is_valid_attendee_id(qr_code):
-                result = process_check_in(qr_code)
-                st.write(result)
+            attendee = get_attendee_info(qr_code)
+            if attendee:
+                st.success(f"Found: {attendee['name']}")
+                st.write(f"School System: {attendee['school_system']}")
+                if attendee['plus_one']:
+                    st.markdown(":green[PLUS ONE]")
             else:
-                st.error("Invalid QR code format. Please scan a valid attendee QR code.")
+                st.error("Attendee not found")
 
         st.markdown("---")
         st.subheader("Manual Code Entry")
@@ -167,11 +171,14 @@ else:
                                                 type="primary")
 
             if submit_button and manual_code:
-                if is_valid_attendee_id(manual_code):
-                    result = process_check_in(manual_code)
-                    st.write(result)
+                attendee = get_attendee_info(manual_code)
+                if attendee:
+                    st.success(f"Found: {attendee['name']}")
+                    st.write(f"School System: {attendee['school_system']}")
+                    if attendee['plus_one']:
+                        st.markdown(":green[PLUS ONE]")
                 else:
-                    st.error("Please enter a valid attendee code (1000-5000)")
+                    st.error("Attendee not found")
 
     def sync_from_csv():
         try:
