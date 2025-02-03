@@ -1,34 +1,63 @@
+
 import os
 import psycopg2
 import pandas as pd
 
-def get_table_info():
+def create_attendees_table():
     try:
         # Connect to the PostgreSQL database
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
-
-        # Fetching the table names
+        
+        # Create attendees table
         cur.execute("""
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public';
+        DROP TABLE IF EXISTS attendees;
+        CREATE TABLE attendees (
+            prefix TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            suffix TEXT,
+            school_system TEXT,
+            grade_subject TEXT,
+            bringing_plus_one BOOLEAN,
+            email TEXT,
+            status TEXT,
+            school_cleaned TEXT,
+            qr_code TEXT,
+            attendance_response TEXT,
+            checked_in BOOLEAN DEFAULT FALSE
+        );
         """)
-
-        tables = cur.fetchall()
-        for table in tables:
-            table_name = table[0]
-            print(f"Table: {table_name}")
-
-            # Fetching column names for the current table
-            cur.execute(f"""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = '{table_name}';
-            """)
-            columns = [col[0] for col in cur.fetchall()]
-            print("Columns:", columns)
-            print()  # New line for better readability
+        
+        # Read CSV and insert data
+        df = pd.read_csv('tad.csv')
+        
+        # Insert data into the database
+        for _, row in df.iterrows():
+            cur.execute("""
+            INSERT INTO attendees (
+                prefix, first_name, last_name, suffix, 
+                school_system, grade_subject, bringing_plus_one,
+                email, status, school_cleaned, qr_code,
+                attendance_response
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                row['prefix'],
+                row['first_name'],
+                row['last_name'],
+                row['suffix'],
+                row['school_system'],
+                row['grade_subject'],
+                row['bringing_plus_one'] == 'Yes',
+                row['email'],
+                row['status'],
+                row['school_cleaned'],
+                row['qr_code'],
+                row['attendance_response']
+            ))
+        
+        conn.commit()
+        print("Table created and data imported successfully!")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -38,20 +67,30 @@ def get_table_info():
         if conn:
             conn.close()
 
-def get_csv_headers():
+def get_table_info():
     try:
-        # Read the CSV file
-        df = pd.read_csv('tad.csv')
-
-        # Get and print the column headers
-        headers = df.columns.tolist()
-        print("CSV Headers:")
-        for header in headers:
-            print(f"- {header}")
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        
+        # Get column information for attendees table
+        cur.execute("""
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'attendees';
+        """)
+        
+        print("\nTable Structure:")
+        for column in cur.fetchall():
+            print(f"- {column[0]}: {column[1]}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
+    create_attendees_table()
     get_table_info()
-    get_csv_headers()
