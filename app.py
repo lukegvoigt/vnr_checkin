@@ -22,19 +22,9 @@ def get_attendee_info(code):
         if result:
             first_name, last_name, school_system, plus_one = result
             
-            # First get current checked_in status
+            # First get current checked_in status without updating
             cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
             checked_in = cur.fetchone()[0]
-            
-            # Only update if not checked in yet
-            if checked_in == 0:
-                cur.execute("""
-                    UPDATE attendees 
-                    SET checked_in = 1
-                    WHERE qr_code = %s
-                """, (code,))
-                conn.commit()
-                checked_in = 1
             
             info = {
                 'name': f"{first_name} {last_name}",
@@ -210,6 +200,19 @@ else:
                         st.markdown(":green[Found:]")
                         st.markdown(f":green[{manual_attendee['name']}]")
                         st.markdown(f":green[{manual_attendee['school_system']}]")
+                        # Update check-in status after verification
+                        try:
+                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                            cur = conn.cursor()
+                            cur.execute("""
+                                UPDATE attendees 
+                                SET checked_in = 1
+                                WHERE qr_code = %s
+                            """, (manual_code,))
+                            conn.commit()
+                        finally:
+                            if cur: cur.close()
+                            if conn: conn.close()
                 else:
                     st.error("Attendee not found")
 
