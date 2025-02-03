@@ -12,7 +12,7 @@ def get_attendee_info(code):
 
         # First check if the attendee exists and get their info
         cur.execute("""
-            SELECT first_name, last_name, school_system, bringing_plus_one 
+            SELECT first_name, last_name, school_system, bringing_plus_one, toty
             FROM attendees 
             WHERE qr_code = %s
         """, (code,))
@@ -20,7 +20,7 @@ def get_attendee_info(code):
         result = cur.fetchone()
 
         if result:
-            first_name, last_name, school_system, plus_one = result
+            first_name, last_name, school_system, plus_one, toty = result
 
             # First get current checked_in status without updating
             cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
@@ -30,7 +30,8 @@ def get_attendee_info(code):
                 'name': f"{first_name} {last_name}",
                 'school_system': school_system,
                 'plus_one': plus_one,
-                'checked_in': checked_in
+                'checked_in': checked_in,
+                'toty': toty
             }
             return info
         return None
@@ -151,6 +152,13 @@ else:
                     st.markdown(":green[Found:]")
                     st.markdown(f":green[{attendee['name']}]")
                     st.markdown(f":green[{attendee['school_system']}]")
+                    if attendee['toty'] == 1:
+                        st.markdown(":green[Teacher of the Year!]")
+                    elif attendee['toty'] == 2:
+                        st.markdown(":green[Staff of the Year!]")
+                    elif attendee['toty'] == 3:
+                        st.markdown(":green[Superintendent!]")
+
                 if attendee['plus_one']:
                     col1, col2 = st.columns(2)
                     with col1:
@@ -202,6 +210,13 @@ else:
                         st.markdown(":green[Found:]")
                         st.markdown(f":green[{manual_attendee['name']}]")
                         st.markdown(f":green[{manual_attendee['school_system']}]")
+                        if manual_attendee['toty'] == 1:
+                            st.markdown(":green[Teacher of the Year!]")
+                        elif manual_attendee['toty'] == 2:
+                            st.markdown(":green[Staff of the Year!]")
+                        elif manual_attendee['toty'] == 3:
+                            st.markdown(":green[Superintendent!]")
+
                         # Update check-in status after verification
                         try:
                             conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -221,32 +236,38 @@ else:
         st.markdown("---")
         st.subheader("Name Search")
         search_query = st.text_input("Search by name:", placeholder="Enter first or last name")
-        
+
         if search_query:
             try:
                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
                 cur = conn.cursor()
-                
+
                 # Search for matching names
                 cur.execute("""
-                    SELECT qr_code, first_name, last_name, school_system, school_cleaned, grade_subject, checked_in 
+                    SELECT qr_code, first_name, last_name, school_system, school_cleaned, grade_subject, checked_in, toty
                     FROM attendees 
                     WHERE LOWER(first_name) LIKE LOWER(%s) 
                     OR LOWER(last_name) LIKE LOWER(%s)
                     ORDER BY last_name, first_name
                 """, (f'%{search_query}%', f'%{search_query}%'))
-                
+
                 results = cur.fetchall()
-                
+
                 if results:
                     for result in results:
-                        qr_code, first_name, last_name, school_system, school, grade, checked_in = result
+                        qr_code, first_name, last_name, school_system, school, grade, checked_in, toty = result
                         col1, col2 = st.columns([3, 1])
                         with col1:
                             st.write(f"**{first_name} {last_name}**")
                             st.write(f"School System: {school_system}")
                             st.write(f"School: {school}")
                             st.write(f"Grade/Subject: {grade}")
+                            if toty == 1:
+                                st.markdown(":green[Teacher of the Year!]")
+                            elif toty == 2:
+                                st.markdown(":green[Staff of the Year!]")
+                            elif toty == 3:
+                                st.markdown(":green[Superintendent!]")
                         with col2:
                             if checked_in == 0:
                                 if st.button("✅", key=f"search_{qr_code}", type="primary"):
@@ -262,7 +283,7 @@ else:
                         st.markdown("---")
                 else:
                     st.warning("No matching names found")
-                
+
             except Exception as e:
                 st.error(f"Error searching database: {e}")
             finally:
@@ -393,7 +414,7 @@ else:
             cur = conn.cursor()
 
             cur.execute("""
-                SELECT first_name, last_name, school_system, bringing_plus_one, checked_in 
+                SELECT first_name, last_name, school_system, bringing_plus_one, checked_in, toty
                 FROM attendees
                 ORDER BY last_name, first_name
             """)
@@ -402,13 +423,21 @@ else:
 
             # Convert to dataframe for display
             df = pd.DataFrame(attendees, 
-                            columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In'])
+                            columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In', 'TOTY'])
 
             # Create status column based on checked_in value
             df['Status'] = df['Checked In'].map({
                 0: "❌ Not Checked In",
                 1: "✅ Checked In",
                 2: "✅ Checked In with Plus One"
+            })
+
+            #Create TOTY column
+            df['TOTY'] = df['TOTY'].map({
+                1: "Teacher of the Year",
+                2: "Staff of the Year",
+                3: "Superintendent",
+                None: ""
             })
 
             # Display the dataframe
