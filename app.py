@@ -22,21 +22,19 @@ def get_attendee_info(code):
         if result:
             first_name, last_name, school_system, plus_one = result
             
-            # Update their checked_in status to 1
-            cur.execute("""
-                UPDATE attendees 
-                SET checked_in = CASE 
-                    WHEN checked_in = 0 THEN 1
-                    ELSE checked_in
-                END
-                WHERE qr_code = %s
-            """, (code,))
-            
-            conn.commit()
-            
-            # Get the current checked_in status
+            # First get current checked_in status
             cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
             checked_in = cur.fetchone()[0]
+            
+            # Only update if not checked in yet
+            if checked_in == 0:
+                cur.execute("""
+                    UPDATE attendees 
+                    SET checked_in = 1
+                    WHERE qr_code = %s
+                """, (code,))
+                conn.commit()
+                checked_in = 1
             
             info = {
                 'name': f"{first_name} {last_name}",
