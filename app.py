@@ -195,22 +195,17 @@ else:
                 # Create table if not exists
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS tad_attendees (
-                        timestamp TEXT,
-                        preferred_prefix TEXT,
+                        prefix TEXT,
                         first_name TEXT,
                         last_name TEXT,
                         suffix TEXT,
-                        school_system TEXT,
-                        school_name TEXT,
-                        grade_subject TEXT,
-                        bringing_plus_one BOOLEAN,
+                        system TEXT,
+                        grade TEXT,
+                        plus_one BOOLEAN,
                         email TEXT,
                         status TEXT,
-                        school_cleaned TEXT,
-                        id TEXT PRIMARY KEY,
-                        qr_code TEXT,
-                        attendance_response TEXT,
-                        checked_in BOOLEAN DEFAULT FALSE
+                        school TEXT,
+                        id TEXT PRIMARY KEY
                     )
                 """)
                 
@@ -218,23 +213,19 @@ else:
                 for _, row in df.iterrows():
                     cur.execute("""
                         INSERT INTO tad_attendees 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id) 
                         DO UPDATE SET 
-                            timestamp = EXCLUDED.timestamp,
-                            preferred_prefix = EXCLUDED.preferred_prefix,
+                            prefix = EXCLUDED.prefix,
                             first_name = EXCLUDED.first_name,
                             last_name = EXCLUDED.last_name,
                             suffix = EXCLUDED.suffix,
-                            school_system = EXCLUDED.school_system,
-                            school_name = EXCLUDED.school_name,
-                            grade_subject = EXCLUDED.grade_subject,
-                            bringing_plus_one = EXCLUDED.bringing_plus_one,
+                            system = EXCLUDED.system,
+                            grade = EXCLUDED.grade,
+                            plus_one = EXCLUDED.plus_one,
                             email = EXCLUDED.email,
                             status = EXCLUDED.status,
-                            school_cleaned = EXCLUDED.school_cleaned,
-                            qr_code = EXCLUDED.qr_code,
-                            attendance_response = EXCLUDED.attendance_response
+                            school = EXCLUDED.school
                     """, (
                         row['Timestamp'],
                         row['Preferred Prefix (optional):'],
