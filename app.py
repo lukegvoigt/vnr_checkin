@@ -414,6 +414,28 @@ else:
             # Display the dataframe
             st.dataframe(df)
 
+            # Add Clear All button with password protection
+            if st.button("Clear All Check-ins", type="secondary"):
+                clear_password = st.text_input("Enter admin password to clear:", type="password")
+                if clear_password:
+                    if clear_password == my_secret:
+                        try:
+                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                            cur = conn.cursor()
+                            cur.execute("UPDATE attendees SET checked_in = 0")
+                            conn.commit()
+                            st.success("All check-ins cleared successfully!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error clearing check-ins: {e}")
+                        finally:
+                            if cur:
+                                cur.close()
+                            if conn:
+                                conn.close()
+                    else:
+                        st.error("Incorrect password")
+
             # Add Plus One buttons for eligible attendees
             st.write("### Plus One Check-in")
             for idx, row in df.iterrows():
