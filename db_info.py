@@ -1,5 +1,6 @@
 import os
 import psycopg2
+import pandas as pd
 
 def get_table_info():
     try:
@@ -37,5 +38,20 @@ def get_table_info():
         if conn:
             conn.close()
 
+def get_csv_headers():
+    try:
+        # Read the CSV file
+        df = pd.read_csv('tad.csv')
+
+        # Get and print the column headers
+        headers = df.columns.tolist()
+        print("CSV Headers:")
+        for header in headers:
+            print(f"- {header}")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 if __name__ == "__main__":
     get_table_info()
+    get_csv_headers()
