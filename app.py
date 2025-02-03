@@ -34,10 +34,15 @@ def get_attendee_info(code):
             
             conn.commit()
             
+            # Get the current checked_in status
+            cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
+            checked_in = cur.fetchone()[0]
+            
             info = {
                 'name': f"{first_name} {last_name}",
                 'school_system': school_system,
-                'plus_one': plus_one
+                'plus_one': plus_one,
+                'checked_in': checked_in
             }
             return info
         return None
@@ -155,8 +160,10 @@ else:
                 st.markdown(":green[Found:]")
                 st.markdown(f":green[{attendee['name']}]")
                 st.markdown(f":green[{attendee['school_system']}]")
+                if attendee['checked_in'] > 0:
+                    st.warning("Attendee already checked in")
                 if attendee['plus_one']:
-                    if st.button(":green[+1]", key=f"plus_one_qr_{qr_code}"):
+                    if st.button("+1", key=f"plus_one_qr_{qr_code}", type="primary"):
                         try:
                             conn = psycopg2.connect(os.environ['DATABASE_URL'])
                             cur = conn.cursor()
@@ -200,7 +207,7 @@ else:
                     st.error("Attendee not found")
 
         if manual_code and attendee and attendee.get('plus_one'):
-            if st.button(":green[+1]", key=f"plus_one_manual_{manual_code}"):
+            if st.button("+1", key=f"plus_one_manual_{manual_code}", type="primary"):
                 try:
                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                     cur = conn.cursor()
