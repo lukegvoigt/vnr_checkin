@@ -443,7 +443,7 @@ else:
 
             # Calculate statistics
             total_registered = len(df)
-            total_checked_in = df['Checked In'].apply(lambda x: 1 if x > 0 else 0).sum()
+            total_checked_in = df['Checked In'].apply(lambda x: 2 if x == 2 else (1 if x == 1 else 0)).sum()
             
             # Display statistics
             col1, col2 = st.columns(2)
