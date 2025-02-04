@@ -20,6 +20,11 @@ def sync_qr_codes():
         for _, row in df.iterrows():
             if str(row['qr_code']) not in existing_qr_codes:
                 # Insert new record
+                # Convert bringing_plus_one to proper boolean
+                plus_one = False
+                if pd.notna(row['bringing_plus_one']):
+                    plus_one = str(row['bringing_plus_one']).lower() == 'yes'
+
                 cur.execute("""
                     INSERT INTO attendees (
                         prefix, first_name, last_name, suffix,
@@ -34,7 +39,7 @@ def sync_qr_codes():
                     row['suffix'],
                     row['school_system'],
                     row['grade_subject'],
-                    row['bringing_plus_one'],
+                    plus_one,
                     row['email'],
                     row['status'],
                     row['school_cleaned'],
