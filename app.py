@@ -13,7 +13,7 @@ def get_attendee_info(code):
 
         # First check if the attendee exists and get their info
         cur.execute("""
-            SELECT first_name, last_name, school_system, bringing_plus_one, toty
+            SELECT first_name, last_name, school_system, bringing_plus_one, toty, grade_subject
             FROM attendees 
             WHERE qr_code = %s
         """, (code,))
@@ -21,7 +21,7 @@ def get_attendee_info(code):
         result = cur.fetchone()
 
         if result:
-            first_name, last_name, school_system, plus_one, toty = result
+            first_name, last_name, school_system, plus_one, toty, grade_subject = result
 
             # First get current checked_in status without updating
             cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
@@ -32,7 +32,8 @@ def get_attendee_info(code):
                 'school_system': school_system,
                 'plus_one': plus_one,
                 'checked_in': checked_in,
-                'toty': toty
+                'toty': toty,
+                'grade_subject': grade_subject
             }
             return info
         return None
@@ -71,7 +72,7 @@ def get_attendee_info(code):
         school_system, grade_subject, 
         bringing_plus_one, email, status, school_cleaned,
         qr_code, attendance_response, checked_in
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ON CONFLICT (id) DO UPDATE SET
         prefix = EXCLUDED.prefix,
         first_name = EXCLUDED.first_name,
@@ -90,7 +91,6 @@ def get_attendee_info(code):
     conn.commit()
     cur.close()
     conn.close()
-
 # Get password from environment variables
 my_secret = os.environ['password']
 
@@ -151,6 +151,7 @@ else:
             if attendee:
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
+                st.write(f"**Grade/Subject:** {attendee['grade_subject']}")
                 st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
                 if attendee['toty'] == 1:
                     st.markdown(":green[Teacher of the Year!]")
@@ -197,6 +198,7 @@ else:
             if attendee:
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
+                st.write(f"**Grade/Subject:** {attendee['grade_subject']}")
                 st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
                 if attendee['toty'] == 1:
                     st.markdown(":green[Teacher of the Year!]")
