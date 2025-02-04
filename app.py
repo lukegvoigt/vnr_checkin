@@ -144,124 +144,77 @@ else:
         st.header("Scan QR Code")
         qr_code = qrcode_scanner(key='scanner')
 
-        if qr_code:
-            attendee = get_attendee_info(qr_code)
-            if attendee:
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"**{attendee['name']}**")
-                    st.write(f"School System: {attendee['school_system']}")
-                    if attendee['toty'] == 1:
-                        st.markdown(":green[Teacher of the Year!]")
-                    elif attendee['toty'] == 2:
-                        st.markdown(":green[Staff of the Year!]")
-                    elif attendee['toty'] == 3:
-                        st.markdown(":green[Superintendent!]")
-                with col2:
-                    if attendee['checked_in'] == 0:
-                        if st.button("Check In"):
-                            try:
-                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                cur = conn.cursor()
-                                cur.execute("""
-                                    UPDATE attendees 
-                                    SET checked_in = 1 
-                                    WHERE qr_code = %s
-                                """, (qr_code,))
-                                conn.commit()
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error updating status: {e}")
-                            finally:
-                                if cur: cur.close()
-                                if conn: conn.close()
-                    elif attendee['bringing_plus_one'] == True:
-                        if st.button("Check In + 1"):
-                            try:
-                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                cur = conn.cursor()
-                                cur.execute("""
-                                    UPDATE attendees 
-                                    SET checked_in = 2
-                                    WHERE qr_code = %s
-                                """, (qr_code,))
-                                conn.commit()
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error updating status: {e}")
-                            finally:
-                                if cur: cur.close()
-                                if conn: conn.close()
-                    else:
-                        st.write("Already checked in")
+        if qr_code or submit_button:
+            try:
+                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                cur = conn.cursor()
 
-            else:
-                st.error("Attendee not found")
+                cur.execute("""
+                    SELECT qr_code, first_name, last_name, school_system, school_cleaned, grade_subject, checked_in, toty, bringing_plus_one
+                    FROM attendees 
+                    WHERE qr_code = %s
+                """, (qr_code,))
+
+                results = cur.fetchall()
+
+                if results:
+                    for result in results:
+                        qr_code, first_name, last_name, school_system, school, grade, checked_in, toty, bringing_plus_one = result
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.write(f"**{first_name} {last_name}**")
+                            st.write(f"School System: {school_system}")
+                            st.write(f"School: {school}")
+                            st.write(f"Grade/Subject: {grade}")
+                            if toty == 1:
+                                st.markdown(":green[Teacher of the Year!]")
+                            elif toty == 2:
+                                st.markdown(":green[Staff of the Year!]")
+                            elif toty == 3:
+                                st.markdown(":green[Superintendent!]")
+                        with col2:
+                            if checked_in == 0:
+                                if st.button("Check In", key=f"qr_{qr_code}", type="primary"):
+                                    cur.execute("""
+                                        UPDATE attendees 
+                                        SET checked_in = 1 
+                                        WHERE qr_code = %s
+                                    """, (qr_code,))
+                                    conn.commit()
+                                    st.rerun()
+                                if bringing_plus_one and st.button("Check In + 1", key=f"qr_plus_{qr_code}", type="primary"):
+                                    cur.execute("""
+                                        UPDATE attendees 
+                                        SET checked_in = 2
+                                        WHERE qr_code = %s
+                                    """, (qr_code,))
+                                    conn.commit()
+                                    st.rerun()
+                            else:
+                                st.write("Already checked in")
+                        st.markdown("---")
+                else:
+                    st.warning("No matching QR code found")
+
+            except Exception as e:
+                st.error(f"Error searching database: {e}")
+            finally:
+                if cur:
+                    cur.close()
+                if conn:
+                    conn.close()
 
         st.markdown("---")
         st.subheader("Manual Code Entry")
         st.caption("If the scanner isn't working, enter the attendee code manually below:")
 
         with st.form("manual_entry", clear_on_submit=True):
-            qr_code = st.text_input("Enter Attendee Code:", 
+            manual_qr_code = st.text_input("Enter Attendee Code:", 
                                       placeholder="Enter code (e.g., 1000)",
                                       help="Enter the number printed below the QR code")
             submit_button = st.form_submit_button("Look Up", 
                                                 use_container_width=True,
                                                 type="primary")
-
-        if submit_button and qr_code:
-            attendee = get_attendee_info(qr_code)
-            st.write(attendee)
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                if attendee:
-                    st.write(f"**{attendee['name']}**")
-                    st.write(f"School System: {attendee['school_system']}")
-                    if attendee['toty'] == 1:
-                        st.markdown(":green[Teacher of the Year!]")
-                    elif attendee['toty'] == 2:
-                        st.markdown(":green[Staff of the Year!]")
-                    elif attendee['toty'] == 3:
-                        st.markdown(":green[Superintendent!]")
-            with col2:
-                if attendee['checked_in'] == 0:
-                    if st.button("Check In", type="primary"):
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE attendees 
-                                SET checked_in = 1 
-                                WHERE qr_code = %s
-                            """, (qr_code,))
-                            conn.commit()
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error updating status: {e}")
-                        finally:
-                            if cur: cur.close()
-                            if conn: conn.close()
-                    if attendee['plus_one'] and st.button("Check In + 1", type="primary"):
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE attendees 
-                                SET checked_in = 2
-                                WHERE qr_code = %s
-                            """, (qr_code,))
-                            conn.commit()
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error updating status: {e}")
-                        finally:
-                            if cur: cur.close()
-                            if conn: conn.close()
-                    else:
-                        st.write("Already checked in")
-                else:
-                    st.error("Attendee not found")
 
         st.markdown("---")
         st.subheader("Name Search")
