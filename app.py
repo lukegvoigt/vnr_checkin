@@ -142,41 +142,35 @@ else:
 
     with tab1:
         st.header("Scan QR Code")
+        
+            
         qr_code = qrcode_scanner(key='scanner')
 
         if qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
+                st.write(f"**Name:** {attendee['name']}")
+                st.write(f"**School System:** {attendee['school_system']}")
+                st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
+                if attendee['checked_in'] != 0:
+                    st.warning("Already checked in")
                 try:
                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                     cur = conn.cursor()
-                    check_in_value = 2 if attendee['plus_one'] else 1
+                    check_in_value = 2 if attendee['toty'] != 0 else 1
                     cur.execute("""
                         UPDATE attendees 
-                        SET checked_in = %s 
+                        SET checked_in = %s
                         WHERE qr_code = %s
                     """, (check_in_value, qr_code))
                     conn.commit()
                 except Exception as e:
                     st.error(f"Error updating status: {e}")
                 finally:
-                    if cur: cur.close()
-                    if conn: conn.close()
-                    
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"**{attendee['name']}**")
-                    st.write(f"School System: {attendee['school_system']}")
-                    if attendee['toty'] == 1:
-                        st.markdown(":green[Teacher of the Year!]")
-                    elif attendee['toty'] == 2:
-                        st.markdown(":green[Staff of the Year!]")
-                    elif attendee['toty'] == 3:
-                        st.markdown(":green[Superintendent!]")
-                with col2:
-                    st.success("Successfully checked in!")
-                st.rerun()
-
+                    if cur:
+                        cur.close()
+                    if conn:
+                        conn.close()
             else:
                 st.error("Attendee not found")
 
@@ -194,56 +188,33 @@ else:
 
         if submit_button and qr_code:
             attendee = get_attendee_info(qr_code)
-            st.write(attendee)
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                if attendee:
-                    st.write(f"**{attendee['name']}**")
-                    st.write(f"School System: {attendee['school_system']}")
-                    if attendee['toty'] == 1:
-                        st.markdown(":green[Teacher of the Year!]")
-                    elif attendee['toty'] == 2:
-                        st.markdown(":green[Staff of the Year!]")
-                    elif attendee['toty'] == 3:
-                        st.markdown(":green[Superintendent!]")
-            with col2:
-                if attendee['checked_in'] == 0:
-                    if st.button("Check In", type="primary"):
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE attendees 
-                                SET checked_in = 1 
-                                WHERE qr_code = %s
-                            """, (qr_code,))
-                            conn.commit()
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error updating status: {e}")
-                        finally:
-                            if cur: cur.close()
-                            if conn: conn.close()
-                    if attendee['plus_one'] and st.button("Check In + 1", type="primary"):
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE attendees 
-                                SET checked_in = 2
-                                WHERE qr_code = %s
-                            """, (qr_code,))
-                            conn.commit()
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error updating status: {e}")
-                        finally:
-                            if cur: cur.close()
-                            if conn: conn.close()
-                    else:
-                        st.write("Already checked in")
-                else:
-                    st.error("Attendee not found")
+            if attendee:
+                st.write(f"**Name:** {attendee['name']}")
+                st.write(f"**School System:** {attendee['school_system']}")
+                st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
+                if attendee['checked_in'] != 0:
+                    st.warning("Already checked in")
+                try:
+                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                    cur = conn.cursor()
+                    check_in_value = 2 if attendee['toty'] != 0 else 1
+                    cur.execute("""
+                        UPDATE attendees 
+                        SET checked_in = %s
+                        WHERE qr_code = %s
+                    """, (check_in_value, qr_code))
+                    conn.commit()
+                    st.write(f"{attendee['name']} checked in successfully!")
+                except Exception as e:
+                    st.error(f"Error updating status: {e}")
+                finally:
+                    if cur:
+                        cur.close()
+                    if conn:
+                        conn.close()
+            else:
+                st.error("Attendee not found")
+        
 
         st.markdown("---")
         st.subheader("Name Search")
