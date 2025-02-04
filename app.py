@@ -144,7 +144,16 @@ else:
         st.header("Scan QR Code")
         qr_code = qrcode_scanner(key='scanner')
 
-        if qr_code or submit_button:
+        with st.form("manual_entry", clear_on_submit=True):
+            manual_qr_code = st.text_input("Enter Attendee Code:", 
+                                      placeholder="Enter code (e.g., 1000)",
+                                      help="Enter the number printed below the QR code")
+            submit_button = st.form_submit_button("Look Up", 
+                                                use_container_width=True,
+                                                type="primary")
+
+        if qr_code or (submit_button and manual_qr_code):
+            search_code = qr_code if qr_code else manual_qr_code
             try:
                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
                 cur = conn.cursor()
@@ -153,7 +162,7 @@ else:
                     SELECT qr_code, first_name, last_name, school_system, school_cleaned, grade_subject, checked_in, toty, bringing_plus_one
                     FROM attendees 
                     WHERE qr_code = %s
-                """, (qr_code,))
+                """, (search_code,))
 
                 results = cur.fetchall()
 
