@@ -251,7 +251,7 @@ else:
                                         if cur: cur.close()
                                         if conn: conn.close()
                         else:
-                            if st.button("Sign in", key="manual_signin", type="primary"):
+                            if st.button("Sign in", key="manual_signin_single", type="primary"):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                     cur = conn.cursor()
@@ -265,8 +265,8 @@ else:
                                 finally:
                                     if cur: cur.close()
                                     if conn: conn.close()
-                else:
-                    st.error("Attendee not found")
+            else:
+                st.error("Attendee not found")
 
         st.markdown("---")
         st.subheader("Name Search")
