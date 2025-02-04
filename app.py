@@ -147,6 +147,22 @@ else:
         if qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
+                try:
+                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                    cur = conn.cursor()
+                    check_in_value = 2 if attendee['plus_one'] else 1
+                    cur.execute("""
+                        UPDATE attendees 
+                        SET checked_in = %s 
+                        WHERE qr_code = %s
+                    """, (check_in_value, qr_code))
+                    conn.commit()
+                except Exception as e:
+                    st.error(f"Error updating status: {e}")
+                finally:
+                    if cur: cur.close()
+                    if conn: conn.close()
+                    
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     st.write(f"**{attendee['name']}**")
@@ -158,42 +174,8 @@ else:
                     elif attendee['toty'] == 3:
                         st.markdown(":green[Superintendent!]")
                 with col2:
-                    if attendee['checked_in'] == 0:
-                        if st.button("Check In"):
-                            try:
-                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                cur = conn.cursor()
-                                cur.execute("""
-                                    UPDATE attendees 
-                                    SET checked_in = 1 
-                                    WHERE qr_code = %s
-                                """, (qr_code,))
-                                conn.commit()
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error updating status: {e}")
-                            finally:
-                                if cur: cur.close()
-                                if conn: conn.close()
-                    elif attendee['bringing_plus_one'] == True:
-                        if st.button("Check In + 1"):
-                            try:
-                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                cur = conn.cursor()
-                                cur.execute("""
-                                    UPDATE attendees 
-                                    SET checked_in = 2
-                                    WHERE qr_code = %s
-                                """, (qr_code,))
-                                conn.commit()
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error updating status: {e}")
-                            finally:
-                                if cur: cur.close()
-                                if conn: conn.close()
-                    else:
-                        st.write("Already checked in")
+                    st.success("Successfully checked in!")
+                st.rerun()
 
             else:
                 st.error("Attendee not found")
