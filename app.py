@@ -147,47 +147,27 @@ else:
         if qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
-                if attendee['checked_in'] > 0:
-                    st.warning(f"Attendee already checked in: {attendee['name']} - {attendee['school_system']}")
-                else:
-                    st.markdown(":green[Found:]")
-                    st.markdown(f":green[{attendee['name']}]")
-                    st.markdown(f":green[{attendee['school_system']}]")
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"**{attendee['name']}**")
+                    st.write(f"School System: {attendee['school_system']}")
                     if attendee['toty'] == 1:
                         st.markdown(":green[Teacher of the Year!]")
                     elif attendee['toty'] == 2:
                         st.markdown(":green[Staff of the Year!]")
                     elif attendee['toty'] == 3:
                         st.markdown(":green[Superintendent!]")
-
-                if attendee['checked_in'] == 0:
-                    sign_in_col, plus_one_col = st.columns(2)
-                    with sign_in_col:
-                        if st.button("Sign in", key=f"signin_qr_{qr_code}", type="primary"):
-                            try:
-                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                cur = conn.cursor()
-                                cur.execute("""
-                                    UPDATE attendees 
-                                    SET checked_in = 1 
-                                    WHERE qr_code = %s
-                                """, (qr_code,))
-                                conn.commit()
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error updating status: {e}")
-                            finally:
-                                if cur: cur.close()
-                                if conn: conn.close()
-                    with plus_one_col:
-                        if attendee['plus_one']:  # Only show +1 button if they have a plus one
-                            if st.button("Sign in +1", key=f"signin_plus_qr_{qr_code}", type="primary"):
+                with col2:
+                    if attendee['checked_in'] == 0:
+                        sign_in_col, plus_one_col = st.columns(2)
+                        with sign_in_col:
+                            if st.button("Sign in", key=f"signin_qr_{qr_code}", type="primary"):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                     cur = conn.cursor()
                                     cur.execute("""
                                         UPDATE attendees 
-                                        SET checked_in = 2 
+                                        SET checked_in = 1 
                                         WHERE qr_code = %s
                                     """, (qr_code,))
                                     conn.commit()
@@ -197,6 +177,26 @@ else:
                                 finally:
                                     if cur: cur.close()
                                     if conn: conn.close()
+                        with plus_one_col:
+                            if attendee['plus_one']:
+                                if st.button("Sign in +1", key=f"signin_plus_qr_{qr_code}", type="primary"):
+                                    try:
+                                        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                        cur = conn.cursor()
+                                        cur.execute("""
+                                            UPDATE attendees 
+                                            SET checked_in = 2 
+                                            WHERE qr_code = %s
+                                        """, (qr_code,))
+                                        conn.commit()
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error updating status: {e}")
+                                    finally:
+                                        if cur: cur.close()
+                                        if conn: conn.close()
+                    else:
+                        st.write("Already checked in")
 
             else:
                 st.error("Attendee not found")
@@ -205,12 +205,10 @@ else:
         st.subheader("Manual Code Entry")
         st.caption("If the scanner isn't working, enter the attendee code manually below:")
 
-        manual_attendee = None
         with st.form("manual_entry", clear_on_submit=True):
             manual_code = st.text_input("Enter Attendee Code:", 
                                       placeholder="Enter code (e.g., 1000)",
                                       help="Enter the number printed below the QR code")
-
             submit_button = st.form_submit_button("Look Up", 
                                                 use_container_width=True,
                                                 type="primary")
@@ -218,19 +216,17 @@ else:
         if submit_button and manual_code:
             manual_attendee = get_attendee_info(manual_code)
             if manual_attendee:
-                if manual_attendee['checked_in'] > 0:
-                    st.warning(f"Attendee already checked in: {manual_attendee['name']} - {manual_attendee['school_system']}")
-                else:
-                    st.markdown(":green[Found:]")
-                    st.markdown(f":green[{manual_attendee['name']}]")
-                    st.markdown(f":green[{manual_attendee['school_system']}]")
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"**{manual_attendee['name']}**")
+                    st.write(f"School System: {manual_attendee['school_system']}")
                     if manual_attendee['toty'] == 1:
                         st.markdown(":green[Teacher of the Year!]")
                     elif manual_attendee['toty'] == 2:
                         st.markdown(":green[Staff of the Year!]")
                     elif manual_attendee['toty'] == 3:
                         st.markdown(":green[Superintendent!]")
-
+                with col2:
                     if manual_attendee['checked_in'] == 0:
                         sign_in_col, plus_one_col = st.columns(2)
                         with sign_in_col:
@@ -249,7 +245,7 @@ else:
                                     if cur: cur.close()
                                     if conn: conn.close()
                         with plus_one_col:
-                            if manual_attendee['plus_one']: # Only show +1 button if they have a plus one
+                            if manual_attendee['plus_one']:
                                 if st.button("Sign in +1", key="manual_signin_plus", type="primary"):
                                     try:
                                         conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -264,6 +260,8 @@ else:
                                     finally:
                                         if cur: cur.close()
                                         if conn: conn.close()
+                    else:
+                        st.write("Already checked in")
             else:
                 st.error("Attendee not found")
 
