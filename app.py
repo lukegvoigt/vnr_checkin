@@ -223,24 +223,26 @@ else:
                 elif attendee['toty'] == 3:
                     st.markdown(":green[Superintendent!]")
                 if attendee['checked_in'] == 0:
-                    if st.button("Check In"):
-                        try:
-                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE attendees 
-                                SET checked_in = 1 
-                                WHERE qr_code = %s
-                            """, (qr_code,))
-                            conn.commit()
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error updating status: {e}")
-                        finally:
-                            if cur: cur.close()
-                            if conn: conn.close()
-                    elif attendee['plus_one']:
-                        if st.button("Check In + 1"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("Check In"):
+                            try:
+                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                cur = conn.cursor()
+                                cur.execute("""
+                                    UPDATE attendees 
+                                    SET checked_in = 1 
+                                    WHERE qr_code = %s
+                                """, (qr_code,))
+                                conn.commit()
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error updating status: {e}")
+                            finally:
+                                if cur: cur.close()
+                                if conn: conn.close()
+                    with col2:
+                        if attendee['plus_one'] and st.button("Check In + 1"):
                             try:
                                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                 cur = conn.cursor()
