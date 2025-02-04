@@ -94,3 +94,29 @@ def get_table_info():
 if __name__ == "__main__":
     create_attendees_table()
     get_table_info()
+
+
+
+def reset_check_ins():
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        
+        # Reset both checked_in and status columns
+        cur.execute("""
+        UPDATE attendees 
+        SET checked_in = 0, 
+            status = 'Not Checked In'
+        """)
+        
+        conn.commit()
+        print("Successfully reset all check-in statuses!")
+        
+    except Exception as e:
+        print(f"An error occurred while resetting check-ins: {e}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
