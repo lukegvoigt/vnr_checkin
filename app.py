@@ -248,22 +248,22 @@ else:
                                         if cur: cur.close()
                                         if conn: conn.close()
                             with col2:
-                                if st.button("Sign in +1", key="manual_signin_plus", type="primary"):
-                                    try:
-                                        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                        cur = conn.cursor()
-                                        cur.execute("""
-                                            UPDATE attendees 
-                                            SET checked_in = 2
-                                            WHERE qr_code = %s
-                                        """, (manual_code,))
-                                        conn.commit()
-                                        st.rerun()
-                                    finally:
-                                        if cur: cur.close()
-                                        if conn: conn.close()
-                        elif manual_attendee['checked_in'] == 0:
-                            if st.button("Sign in", key="manual_signin_single", type="primary"):
+                            if st.button("Sign in +1", key="manual_signin_plus", type="primary"):
+                                try:
+                                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                    cur = conn.cursor()
+                                    cur.execute("""
+                                        UPDATE attendees 
+                                        SET checked_in = 2
+                                        WHERE qr_code = %s
+                                    """, (manual_code,))
+                                    conn.commit()
+                                    st.rerun()
+                                finally:
+                                    if cur: cur.close()
+                                    if conn: conn.close()
+                    elif manual_attendee['checked_in'] == 0:
+                        if st.button("Sign in", key="manual_signin_single", type="primary"):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                     cur = conn.cursor()
