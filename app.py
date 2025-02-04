@@ -147,21 +147,22 @@ else:
         if qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"**{attendee['name']}**")
-                    st.write(f"School System: {attendee['school_system']}")
-                    if attendee['toty'] == 1:
-                        st.markdown(":green[Teacher of the Year!]")
-                    elif attendee['toty'] == 2:
-                        st.markdown(":green[Staff of the Year!]")
-                    elif attendee['toty'] == 3:
-                        st.markdown(":green[Superintendent!]")
-                with col2:
-                    if attendee['checked_in'] == 0:
-                        sign_in_col, plus_one_col = st.columns(2)
-                        with sign_in_col:
-                            if st.markdown(f"[**:green[Sign in]**](#signin_qr_{qr_code})", unsafe_allow_html=True):
+                toty_text = ""
+                if attendee['toty'] == 1:
+                    toty_text = " :green[Teacher of the Year!]"
+                elif attendee['toty'] == 2:
+                    toty_text = " :green[Staff of the Year!]"
+                elif attendee['toty'] == 3:
+                    toty_text = " :green[Superintendent!]"
+                
+                st.write(f"**{attendee['name']}** - {attendee['school_system']}{toty_text}")
+                
+                if attendee['checked_in'] == 0:
+                    links = f"[**:green[Sign in]**](#signin_qr_{qr_code})"
+                    if attendee['plus_one']:
+                        links += f" [**:green[Sign in +1]**](#signin_plus_qr_{qr_code})"
+                    st.markdown(links, unsafe_allow_html=True)
+                    if st.markdown(f"[**:green[Sign in]**](#signin_qr_{qr_code})", unsafe_allow_html=True):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                     cur = conn.cursor()
@@ -223,21 +224,22 @@ else:
         if submit_button and manual_code:
             manual_attendee = get_attendee_info(manual_code)
             if manual_attendee:
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"**{manual_attendee['name']}**")
-                    st.write(f"School System: {manual_attendee['school_system']}")
-                    if manual_attendee['toty'] == 1:
-                        st.markdown(":green[Teacher of the Year!]")
-                    elif manual_attendee['toty'] == 2:
-                        st.markdown(":green[Staff of the Year!]")
-                    elif manual_attendee['toty'] == 3:
-                        st.markdown(":green[Superintendent!]")
-                with col2:
-                    if manual_attendee['checked_in'] == 0:
-                        sign_in_col, plus_one_col = st.columns(2)
-                        with sign_in_col:
-                            if st.markdown("[**:green[Sign in]**](#manual_signin)", unsafe_allow_html=True):
+                toty_text = ""
+                if manual_attendee['toty'] == 1:
+                    toty_text = " :green[Teacher of the Year!]"
+                elif manual_attendee['toty'] == 2:
+                    toty_text = " :green[Staff of the Year!]"
+                elif manual_attendee['toty'] == 3:
+                    toty_text = " :green[Superintendent!]"
+                
+                st.write(f"**{manual_attendee['name']}** - {manual_attendee['school_system']}{toty_text}")
+                
+                if manual_attendee['checked_in'] == 0:
+                    links = "[**:green[Sign in]**](#manual_signin)"
+                    if manual_attendee['plus_one']:
+                        links += " [**:green[Sign in +1]**](#manual_signin_plus)"
+                    st.markdown(links, unsafe_allow_html=True)
+                    if st.markdown("[**:green[Sign in]**](#manual_signin)", unsafe_allow_html=True):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                     cur = conn.cursor()
