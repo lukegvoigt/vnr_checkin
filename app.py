@@ -254,23 +254,19 @@ else:
                                 st.markdown(":green[Superintendent!]")
                         with col2:
                             if checked_in == 0:
+                                check_in_value = 0
                                 if st.button("Check In", key=f"search_{qr_code}", type="primary"):
+                                    if toty in [1, 2, 3]:
+                                        check_in_value = 2
+                                    else:
+                                        check_in_value = 1
                                     cur.execute("""
                                         UPDATE attendees 
-                                        SET checked_in = 1 
+                                        SET checked_in = %s 
                                         WHERE qr_code = %s
-                                    """, (qr_code,))
+                                    """, (check_in_value,qr_code))
                                     conn.commit()
                                     st.rerun()
-                                if toty in [1, 2, 3]:
-                                    if st.button("Check In + 1", type="primary"):
-                                        cur.execute("""
-                                            UPDATE attendees 
-                                            SET checked_in = 2 
-                                            WHERE qr_code = %s
-                                        """, (qr_code,))
-                                        conn.commit()
-                                        st.rerun()
                             else:
                                 st.write("Already checked in")
                         st.markdown("---")
