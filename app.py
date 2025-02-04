@@ -441,6 +441,17 @@ else:
                 None: ""
             })
 
+            # Calculate statistics
+            total_registered = len(df)
+            total_checked_in = df['Checked In'].apply(lambda x: 1 if x > 0 else 0).sum()
+            
+            # Display statistics
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Registered", total_registered)
+            with col2:
+                st.metric("Total Checked In", total_checked_in)
+            
             # Display the dataframe
             st.dataframe(df)
 
