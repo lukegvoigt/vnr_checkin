@@ -152,11 +152,11 @@ else:
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
                 st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
-                if toty == 1:
+                if attendee['toty'] == 1:
                     st.markdown(":green[Teacher of the Year!]")
-                elif toty == 2:
+                elif attendee['toty']:
                     st.markdown(":green[Staff of the Year!]")
-                elif toty == 3:
+                elif attendee['toty']:
                     st.markdown(":green[Superintendent!]")
                 if attendee['checked_in'] != 0:
                     st.warning("Already checked in")
@@ -198,11 +198,11 @@ else:
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
                 st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
-                if toty == 1:
+                if attendee['toty'] == 1:
                     st.markdown(":green[Teacher of the Year!]")
-                elif toty == 2:
+                elif attendee['toty'] == 2:
                     st.markdown(":green[Staff of the Year!]")
-                elif toty == 3:
+                elif attendee['toty'] == 3:
                     st.markdown(":green[Superintendent!]")
                 if attendee['checked_in'] != 0:
                     st.warning("Already checked in")
