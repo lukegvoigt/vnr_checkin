@@ -91,10 +91,6 @@ def get_table_info():
         if conn:
             conn.close()
 
-if __name__ == "__main__":
-    create_attendees_table()
-    get_table_info()
-
 
 
 def reset_check_ins():
@@ -120,3 +116,13 @@ def reset_check_ins():
         if conn:
             conn.close()
 
+
+
+if __name__ == "__main__":
+    user_input = input("Enter 1 to get table info, 2 to create attendees table, 6 to reset check-ins: ")
+    if user_input == '1':
+        get_table_info()
+    elif user_input == '2':
+        create_attendees_table()
+    elif user_input == '6':
+        reset_check_ins()
