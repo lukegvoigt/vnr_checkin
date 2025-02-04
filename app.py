@@ -481,8 +481,15 @@ else:
             attendees = cur.fetchall()
 
             # Convert to dataframe for display
+            cur.execute("""
+                SELECT first_name, last_name, school_system, bringing_plus_one, checked_in, toty, qr_code
+                FROM attendees
+                ORDER BY last_name, first_name
+            """)
+            attendees = cur.fetchall()
+            
             df = pd.DataFrame(attendees, 
-                            columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In', 'TOTY'])
+                            columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In', 'TOTY', 'QR Code'])
 
             # Create status column based on checked_in value
             df['Status'] = df['Checked In'].map({
@@ -520,8 +527,8 @@ else:
             for school, count in school_attendance.items():
                 st.write(f"{school}: {count}")
             
-            # Display the dataframe
-            st.dataframe(df)
+            # Display the dataframe with increased width
+            st.dataframe(df, width=1200)
 
             clear_col1, clear_col2 = st.columns([1, 3])
                 
