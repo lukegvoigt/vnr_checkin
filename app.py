@@ -235,50 +235,47 @@ else:
                 st.write(f"**{manual_attendee['name']}** - {manual_attendee['school_system']}{toty_text}")
                 
                 if manual_attendee['checked_in'] == 0:
-                    links = "[**:green[Sign in]**](#manual_signin)"
-                    if manual_attendee['plus_one']:
-                        links += " [**:green[Sign in +1]**](#manual_signin_plus)"
-                    st.markdown(links, unsafe_allow_html=True)
                     if st.markdown("[**:green[Sign in]**](#manual_signin)", unsafe_allow_html=True):
-                                try:
-                                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                    cur = conn.cursor()
-                                    cur.execute("""
-                                        UPDATE attendees 
-                                        SET checked_in = 1
-                                        WHERE qr_code = %s
-                                        RETURNING first_name, last_name
-                                    """, (manual_code,))
-                                    result = cur.fetchone()
-                                    conn.commit()
-                                    if result:
-                                        st.success(f"Signed in {result[0]} {result[1]}")
-                                        time.sleep(1)
-                                        st.rerun()
-                                    else:
-                                        st.error("Failed to update record")
-                                except Exception as e:
-                                    st.error(f"Error updating status: {e}")
-                                finally:
-                                    if cur: cur.close()
-                                    if conn: conn.close()
-                        if manual_attendee['plus_one']:
-                            if st.markdown("[**:green[Sign in +1]**](#manual_signin_plus)", unsafe_allow_html=True):
-                                try:
-                                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                    cur = conn.cursor()
-                                    cur.execute("""
-                                        UPDATE attendees 
-                                        SET checked_in = 2
-                                        WHERE qr_code = %s
-                                    """, (manual_code,))
-                                    conn.commit()
-                                    st.rerun()
-                                finally:
-                                    if cur: cur.close()
-                                    if conn: conn.close()
-                    else:
-                        st.write("Already checked in")
+                        try:
+                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                            cur = conn.cursor()
+                            cur.execute("""
+                                UPDATE attendees 
+                                SET checked_in = 1
+                                WHERE qr_code = %s
+                                RETURNING first_name, last_name
+                            """, (manual_code,))
+                            result = cur.fetchone()
+                            conn.commit()
+                            if result:
+                                st.success(f"Signed in {result[0]} {result[1]}")
+                                time.sleep(1)
+                                st.rerun()
+                            else:
+                                st.error("Failed to update record")
+                        except Exception as e:
+                            st.error(f"Error updating status: {e}")
+                        finally:
+                            if cur: cur.close()
+                            if conn: conn.close()
+                    
+                    if manual_attendee['plus_one']:
+                        if st.markdown("[**:green[Sign in +1]**](#manual_signin_plus)", unsafe_allow_html=True):
+                            try:
+                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                cur = conn.cursor()
+                                cur.execute("""
+                                    UPDATE attendees 
+                                    SET checked_in = 2
+                                    WHERE qr_code = %s
+                                """, (manual_code,))
+                                conn.commit()
+                                st.rerun()
+                            finally:
+                                if cur: cur.close()
+                                if conn: conn.close()
+                else:
+                    st.write("Already checked in")
             else:
                 st.error("Attendee not found")
 
