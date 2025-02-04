@@ -336,31 +336,6 @@ else:
                 if conn:
                     conn.close()
 
-        if manual_code and manual_attendee and manual_attendee.get('plus_one'):
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("+1", key=f"plus_one_manual_{manual_code}", type="primary"):
-                    try:
-                        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                        cur = conn.cursor()
-                        cur.execute("""
-                            UPDATE attendees 
-                            SET checked_in = 2 
-                            WHERE qr_code = %s
-                        """, (manual_code,))
-                        conn.commit()
-                    except Exception as e:
-                        st.error(f"Error updating plus one status: {e}")
-                    finally:
-                        if cur:
-                            cur.close()
-                        if conn:
-                            conn.close()
-                    st.rerun()
-            with col2:
-                if manual_attendee['checked_in'] == 2:
-                    st.write(":green[(+1 added)]")
-
     def sync_from_csv():
         try:
             uploaded_file = st.file_uploader("Choose a CSV file", type='csv')
