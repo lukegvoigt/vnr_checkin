@@ -301,23 +301,14 @@ else:
                                 st.markdown(":green[Superintendent!]")
                         with col2:
                             if checked_in == 0:
-                                if toty in ([1,2,3]):
-                                    if st.button("Sign in", key=f"search_{qr_code}", type="primary"):
-                                        cur.execute("""
-                                            UPDATE attendees 
-                                            SET checked_in = 1 
-                                            WHERE qr_code = %s
-                                        """, (qr_code,))
-                                        conn.commit()
-                                        st.rerun()  # if result is 2 (Staff of the Year) or 3 (Superintendent)
-                                    if st.button("Sign in +1", key=f"search_plus_{qr_code}", type="primary"):
-                                        cur.execute("""
-                                            UPDATE attendees 
-                                            SET checked_in = 2 
-                                            WHERE qr_code = %s
-                                        """, (qr_code,))
-                                        conn.commit()
-                                        st.rerun()
+                                if st.button("Check In", key=f"search_{qr_code}", type="primary"):
+                                    cur.execute("""
+                                        UPDATE attendees 
+                                        SET checked_in = 1 
+                                        WHERE qr_code = %s
+                                    """, (qr_code,))
+                                    conn.commit()
+                                    st.rerun()
                             else:
                                 st.write("Already checked in")
                         st.markdown("---")
