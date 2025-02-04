@@ -452,9 +452,9 @@ else:
             with col2:
                 st.metric("Total Checked In", total_checked_in)
 
-            # Calculate attendance by school system
-            school_attendance = df[df['Checked In'] > 0].groupby('School System')['Checked In'].apply(
-                lambda x: (x == 2).sum() + (x == 1).sum()
+            # Calculate attendance by school system including plus ones
+            school_attendance = df.groupby('School System')['Checked In'].apply(
+                lambda x: (x == 2).sum() * 2 + (x == 1).sum()
             ).reindex(['Lowndes County Schools', 'Valdosta City Schools']).fillna(0).astype(int)
 
             # Display school system breakdown
