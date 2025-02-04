@@ -263,20 +263,20 @@ else:
                                     if cur: cur.close()
                                     if conn: conn.close()
                         if manual_attendee['plus_one']:
-                        if st.markdown("[**:green[Sign in +1]**](#manual_signin_plus)", unsafe_allow_html=True):
-                            try:
-                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
-                                cur = conn.cursor()
-                                cur.execute("""
-                                    UPDATE attendees 
-                                    SET checked_in = 2
-                                    WHERE qr_code = %s
-                                """, (manual_code,))
-                                conn.commit()
-                                st.rerun()
-                            finally:
-                                if cur: cur.close()
-                                if conn: conn.close()
+                            if st.markdown("[**:green[Sign in +1]**](#manual_signin_plus)", unsafe_allow_html=True):
+                                try:
+                                    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                    cur = conn.cursor()
+                                    cur.execute("""
+                                        UPDATE attendees 
+                                        SET checked_in = 2
+                                        WHERE qr_code = %s
+                                    """, (manual_code,))
+                                    conn.commit()
+                                    st.rerun()
+                                finally:
+                                    if cur: cur.close()
+                                    if conn: conn.close()
                     else:
                         st.write("Already checked in")
             else:
