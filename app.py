@@ -508,13 +508,13 @@ else:
 
             clear_col1, clear_col2 = st.columns([1, 3])
 
-            # Add Plus One buttons for eligible attendees
+            # Add Plus One links for eligible attendees
             st.write("### Plus One Check-in")
             for idx, row in df.iterrows():
                 if row['Plus One'] and row['Checked In'] == 1:
                     col1, col2 = st.columns(2)
                     with col1:
-                        if st.button(f":green[+ One] for {row['First Name']} {row['Last Name']}", key=f"plus_one_{idx}", type="primary"):
+                        if st.markdown(f"[**:green[+ One for {row['First Name']} {row['Last Name']}]**](#plus_one_{idx})", unsafe_allow_html=True):
                             try:
                                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                 cur = conn.cursor()
@@ -524,6 +524,7 @@ else:
                                     WHERE first_name = %s AND last_name = %s
                                 """, (row['First Name'], row['Last Name']))
                                 conn.commit()
+                                st.rerun()
                             except Exception as e:
                                 st.error(f"Error updating plus one status: {e}")
                             finally:
@@ -531,7 +532,6 @@ else:
                                     cur.close()
                                 if conn:
                                     conn.close()
-                            st.rerun()
                     with col2:
                         if row['Checked In'] == 2:
                             st.write(":green[(+1 added)]")
