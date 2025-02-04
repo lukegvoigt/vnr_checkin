@@ -160,10 +160,27 @@ else:
                     elif attendee['toty'] == 3:
                         st.markdown(":green[Superintendent!]")
 
-                if attendee['plus_one']:
+                if attendee['plus_one'] and attendee['checked_in'] == 0:
                     col1, col2 = st.columns(2)
                     with col1:
-                        if st.button("+1", key=f"plus_one_qr_{qr_code}", type="primary"):
+                        if st.button("Sign in", key=f"signin_qr_{qr_code}", type="primary"):
+                            try:
+                                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                                cur = conn.cursor()
+                                cur.execute("""
+                                    UPDATE attendees 
+                                    SET checked_in = 1 
+                                    WHERE qr_code = %s
+                                """, (qr_code,))
+                                conn.commit()
+                            except Exception as e:
+                                st.error(f"Error updating status: {e}")
+                            finally:
+                                if cur: cur.close()
+                                if conn: conn.close()
+                            st.rerun()
+                    with col2:
+                        if st.button("Sign in +1", key=f"signin_plus_qr_{qr_code}", type="primary"):
                             try:
                                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                 cur = conn.cursor()
@@ -174,16 +191,11 @@ else:
                                 """, (qr_code,))
                                 conn.commit()
                             except Exception as e:
-                                st.error(f"Error updating plus one status: {e}")
+                                st.error(f"Error updating status: {e}")
                             finally:
-                                if cur:
-                                    cur.close()
-                                if conn:
-                                    conn.close()
+                                if cur: cur.close()
+                                if conn: conn.close()
                             st.rerun()
-                    with col2:
-                        if attendee['checked_in'] == 2:
-                            st.write(":green[(+1 added)]")
 
             else:
                 st.error("Attendee not found")
@@ -218,7 +230,7 @@ else:
                     elif manual_attendee['toty'] == 3:
                         st.markdown(":green[Superintendent!]")
 
-                        if manual_attendee['plus_one']:
+                        if manual_attendee['plus_one'] and manual_attendee['checked_in'] == 0:
                             col1, col2 = st.columns(2)
                             with col1:
                                 if st.button("Sign in", key="manual_signin", type="primary"):
@@ -250,7 +262,7 @@ else:
                                     finally:
                                         if cur: cur.close()
                                         if conn: conn.close()
-                        else:
+                        elif manual_attendee['checked_in'] == 0:
                             if st.button("Sign in", key="manual_signin_single", type="primary"):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
