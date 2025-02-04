@@ -451,6 +451,16 @@ else:
                 st.metric("Total Registered", total_registered)
             with col2:
                 st.metric("Total Checked In", total_checked_in)
+
+            # Calculate attendance by school system
+            school_attendance = df[df['Checked In'] > 0].groupby('School System')['Checked In'].apply(
+                lambda x: (x == 2).sum() + (x == 1).sum()
+            ).reindex(['Lowndes County Schools', 'Valdosta City Schools']).fillna(0).astype(int)
+
+            # Display school system breakdown
+            st.write("### Current Attendance by School System")
+            for school, count in school_attendance.items():
+                st.write(f"{school}: {count}")
             
             # Display the dataframe
             st.dataframe(df)
