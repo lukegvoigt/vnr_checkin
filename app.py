@@ -229,11 +229,11 @@ else:
                         st.markdown(":green[Staff of the Year!]")
                     elif manual_attendee['toty'] == 3:
                         st.markdown(":green[Superintendent!]")
-
-                        if manual_attendee['plus_one'] and manual_attendee['checked_in'] == 0:
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                if st.button("Sign in", key="manual_signin", type="primary"):
+                    
+                    if manual_attendee['plus_one'] and manual_attendee['checked_in'] == 0:
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("Sign in", key="manual_signin", type="primary"):
                                     try:
                                         conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                         cur = conn.cursor()
