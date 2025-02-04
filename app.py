@@ -161,7 +161,7 @@ else:
                     if attendee['checked_in'] == 0:
                         sign_in_col, plus_one_col = st.columns(2)
                         with sign_in_col:
-                            if st.button("Sign in", key=f"signin_qr_{qr_code}", type="primary"):
+                            if st.markdown(f"[**:green[Sign in]**](#signin_qr_{qr_code})", unsafe_allow_html=True):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                     cur = conn.cursor()
@@ -186,7 +186,7 @@ else:
                                     if conn: conn.close()
                         with plus_one_col:
                             if attendee['plus_one']:
-                                if st.button("Sign in +1", key=f"signin_plus_qr_{qr_code}", type="primary"):
+                                if st.markdown(f"[**:green[Sign in +1]**](#signin_plus_qr_{qr_code})", unsafe_allow_html=True):
                                     try:
                                         conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                         cur = conn.cursor()
@@ -237,7 +237,7 @@ else:
                     if manual_attendee['checked_in'] == 0:
                         sign_in_col, plus_one_col = st.columns(2)
                         with sign_in_col:
-                            if st.button("Sign in", key="manual_signin", type="primary"):
+                            if st.markdown("[**:green[Sign in]**](#manual_signin)", unsafe_allow_html=True):
                                 try:
                                     conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                     cur = conn.cursor()
@@ -262,7 +262,7 @@ else:
                                     if conn: conn.close()
                         with plus_one_col:
                             if manual_attendee['plus_one']:
-                                if st.button("Sign in +1", key="manual_signin_plus", type="primary"):
+                                if st.markdown("[**:green[Sign in +1]**](#manual_signin_plus)", unsafe_allow_html=True):
                                     try:
                                         conn = psycopg2.connect(os.environ['DATABASE_URL'])
                                         cur = conn.cursor()
