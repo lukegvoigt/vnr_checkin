@@ -198,25 +198,25 @@ else:
                                       placeholder="Enter code (e.g., 1000)",
                                       help="Enter the number printed below the QR code")
 
-            submit_button = st.form_submit_button("Check In", 
+            submit_button = st.form_submit_button("Look Up", 
                                                 use_container_width=True,
                                                 type="primary")
 
-            if submit_button and manual_code:
-                manual_attendee = get_attendee_info(manual_code)
-                if manual_attendee:
-                    if manual_attendee['checked_in'] > 0:
-                        st.warning(f"Attendee already checked in: {manual_attendee['name']} - {manual_attendee['school_system']}")
-                    else:
-                        st.markdown(":green[Found:]")
-                        st.markdown(f":green[{manual_attendee['name']}]")
-                        st.markdown(f":green[{manual_attendee['school_system']}]")
-                        if manual_attendee['toty'] == 1:
-                            st.markdown(":green[Teacher of the Year!]")
-                        elif manual_attendee['toty'] == 2:
-                            st.markdown(":green[Staff of the Year!]")
-                        elif manual_attendee['toty'] == 3:
-                            st.markdown(":green[Superintendent!]")
+        if submit_button and manual_code:
+            manual_attendee = get_attendee_info(manual_code)
+            if manual_attendee:
+                if manual_attendee['checked_in'] > 0:
+                    st.warning(f"Attendee already checked in: {manual_attendee['name']} - {manual_attendee['school_system']}")
+                else:
+                    st.markdown(":green[Found:]")
+                    st.markdown(f":green[{manual_attendee['name']}]")
+                    st.markdown(f":green[{manual_attendee['school_system']}]")
+                    if manual_attendee['toty'] == 1:
+                        st.markdown(":green[Teacher of the Year!]")
+                    elif manual_attendee['toty'] == 2:
+                        st.markdown(":green[Staff of the Year!]")
+                    elif manual_attendee['toty'] == 3:
+                        st.markdown(":green[Superintendent!]")
 
                         if manual_attendee['plus_one']:
                             col1, col2 = st.columns(2)
