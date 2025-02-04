@@ -169,9 +169,16 @@ else:
                                         UPDATE attendees 
                                         SET checked_in = 1 
                                         WHERE qr_code = %s
+                                        RETURNING first_name, last_name
                                     """, (qr_code,))
+                                    result = cur.fetchone()
                                     conn.commit()
-                                    st.rerun()
+                                    if result:
+                                        st.success(f"Signed in {result[0]} {result[1]}")
+                                        time.sleep(1)
+                                        st.rerun()
+                                    else:
+                                        st.error("Failed to update record")
                                 except Exception as e:
                                     st.error(f"Error updating status: {e}")
                                 finally:
@@ -238,9 +245,18 @@ else:
                                         UPDATE attendees 
                                         SET checked_in = 1
                                         WHERE qr_code = %s
+                                        RETURNING first_name, last_name
                                     """, (manual_code,))
+                                    result = cur.fetchone()
                                     conn.commit()
-                                    st.rerun()
+                                    if result:
+                                        st.success(f"Signed in {result[0]} {result[1]}")
+                                        time.sleep(1)
+                                        st.rerun()
+                                    else:
+                                        st.error("Failed to update record")
+                                except Exception as e:
+                                    st.error(f"Error updating status: {e}")
                                 finally:
                                     if cur: cur.close()
                                     if conn: conn.close()
