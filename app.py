@@ -258,8 +258,8 @@ else:
                             finally:
                                 if cur: cur.close()
                                 if conn: conn.close()
-                    else:
-                        st.write("Already checked in")
+                        else:
+                            st.write("Already checked in")
             else:
                 st.error("Attendee not found")
 
@@ -286,6 +286,7 @@ else:
                 if results:
                     for result in results:
                         qr_code, first_name, last_name, school_system, school, grade, checked_in, toty = result
+                        print(result)
                         col1, col2 = st.columns([3, 1])
                         with col1:
                             st.write(f"**{first_name} {last_name}**")
@@ -300,15 +301,15 @@ else:
                                 st.markdown(":green[Superintendent!]")
                         with col2:
                             if checked_in == 0:
-                                if st.button("Sign in", key=f"search_{qr_code}", type="primary"):
-                                    cur.execute("""
-                                        UPDATE attendees 
-                                        SET checked_in = 1 
-                                        WHERE qr_code = %s
-                                    """, (qr_code,))
-                                    conn.commit()
-                                    st.rerun()
-                                if result[3]:  # if bringing_plus_one is True
+                                if toty in ([1,2,3]):
+                                    if st.button("Sign in", key=f"search_{qr_code}", type="primary"):
+                                        cur.execute("""
+                                            UPDATE attendees 
+                                            SET checked_in = 1 
+                                            WHERE qr_code = %s
+                                        """, (qr_code,))
+                                        conn.commit()
+                                        st.rerun()  # if result is 2 (Staff of the Year) or 3 (Superintendent)
                                     if st.button("Sign in +1", key=f"search_plus_{qr_code}", type="primary"):
                                         cur.execute("""
                                             UPDATE attendees 
