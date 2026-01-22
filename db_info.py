@@ -25,7 +25,8 @@ def create_attendees_table():
             school_cleaned TEXT,
             qr_code TEXT,
             attendance_response TEXT,
-            checked_in INTEGER DEFAULT 0
+            checked_in INTEGER DEFAULT 0,
+            year INTEGER DEFAULT 2026
         );
         """)
         
@@ -34,13 +35,14 @@ def create_attendees_table():
         
         # Insert data into the database
         for _, row in df.iterrows():
+            year_value = row.get('year', 2026)
             cur.execute("""
             INSERT INTO attendees (
                 prefix, first_name, last_name, suffix, 
                 school_system, grade_subject, bringing_plus_one,
                 email, status, school_cleaned, qr_code,
-                attendance_response
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                attendance_response, year
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 row['prefix'],
                 row['first_name'],
@@ -53,7 +55,8 @@ def create_attendees_table():
                 row['status'],
                 row['school_cleaned'],
                 row['qr_code'],
-                row['attendance_response']
+                row['attendance_response'],
+                year_value
             ))
         
         conn.commit()

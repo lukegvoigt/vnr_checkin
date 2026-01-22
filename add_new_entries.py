@@ -7,18 +7,19 @@ def generate_qr_code():
 
 new_entries = [
     {
-        'prefix': '',  # Empty prefix
+        'prefix': '',
         'first_name': 'Kaylie',
         'last_name': 'Willis',
-        'suffix': '',  # Empty suffix
+        'suffix': '',
         'school_system': 'Lowndes County Schools',
-        'grade_subject': '',  # Empty grade/subject
-        'bringing_plus_one': '',  # Empty plus one
+        'grade_subject': '',
+        'bringing_plus_one': '',
         'email': 'kayliewillis@lowndes.k12.ga.us',
         'status': 'Invited',
-        'school_cleaned': '',  # Empty school
+        'school_cleaned': '',
         'qr_code': generate_qr_code(),
-        'attendance_response': ''  # Empty attendance response
+        'attendance_response': '',
+        'year': 2026
     },
     {
         'prefix': '',
@@ -32,7 +33,8 @@ new_entries = [
         'status': 'Invited',
         'school_cleaned': '',
         'qr_code': generate_qr_code(),
-        'attendance_response': ''
+        'attendance_response': '',
+        'year': 2026
     },
     {
         'prefix': '',
@@ -46,7 +48,8 @@ new_entries = [
         'status': 'Invited',
         'school_cleaned': '',
         'qr_code': generate_qr_code(),
-        'attendance_response': ''
+        'attendance_response': '',
+        'year': 2026
     },
     {
         'prefix': '',
@@ -60,7 +63,8 @@ new_entries = [
         'status': 'Invited',
         'school_cleaned': '',
         'qr_code': generate_qr_code(),
-        'attendance_response': ''
+        'attendance_response': '',
+        'year': 2026
     }
 ]
 
@@ -69,7 +73,7 @@ with open('tad.csv', 'a', newline='') as file:
     writer = csv.DictWriter(file, fieldnames=[
         'prefix', 'first_name', 'last_name', 'suffix', 'school_system',
         'grade_subject', 'bringing_plus_one', 'email', 'status',
-        'school_cleaned', 'qr_code', 'attendance_response'
+        'school_cleaned', 'qr_code', 'attendance_response', 'year'
     ])
     
     for entry in new_entries:
