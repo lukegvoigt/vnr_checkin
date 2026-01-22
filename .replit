@@ -3,6 +3,7 @@ run = "streamlit run app.py"
 
 [nix]
 channel = "stable-24_05"
+packages = ["glibcLocales"]
 
 [deployment]
 run = ["sh", "-c", "streamlit run app.py"]
@@ -10,3 +11,6 @@ run = ["sh", "-c", "streamlit run app.py"]
 [[ports]]
 localPort = 8501
 externalPort = 80
+
+[agent]
+expertMode = true
