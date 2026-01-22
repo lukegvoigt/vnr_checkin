@@ -391,11 +391,19 @@ else:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
 
+            # Get available years for the dropdown
+            cur.execute("SELECT DISTINCT year FROM attendees ORDER BY year DESC")
+            available_years = [row[0] for row in cur.fetchall()]
+            
+            # Year selector
+            selected_year = st.selectbox("Select Year", available_years, index=0 if available_years else None)
+
             cur.execute("""
                 SELECT first_name, last_name, school_system, bringing_plus_one, checked_in, toty
                 FROM attendees
+                WHERE year = %s
                 ORDER BY last_name, first_name
-            """)
+            """, (selected_year,))
 
             attendees = cur.fetchall()
 
@@ -403,8 +411,9 @@ else:
             cur.execute("""
                 SELECT first_name, last_name, school_system, bringing_plus_one, checked_in, toty, qr_code
                 FROM attendees
+                WHERE year = %s
                 ORDER BY last_name, first_name
-            """)
+            """, (selected_year,))
             attendees = cur.fetchall()
 
             df = pd.DataFrame(attendees, 
@@ -464,8 +473,8 @@ else:
                                 cur.execute("""
                                     UPDATE attendees 
                                     SET checked_in = 2 
-                                    WHERE first_name = %s AND last_name = %s
-                                """, (row['First Name'], row['Last Name']))
+                                    WHERE first_name = %s AND last_name = %s AND year = %s
+                                """, (row['First Name'], row['Last Name'], selected_year))
                                 conn.commit()
                                 st.rerun()
                             except Exception as e:
