@@ -7,3 +7,5 @@ gspread
 psycopg2-binary
 requests
 bcrypt
+pillow
+qrcode

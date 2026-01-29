@@ -9,6 +9,8 @@ import base64
 import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import qrcode
+from io import BytesIO
 
 st.set_page_config(page_title="Sponsor Portal", page_icon="🎟️", layout="wide")
 
@@ -46,6 +48,8 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, company_na
     if not access_token:
         return False, "Gmail not connected"
     
+    qr_base64 = generate_qr_code_base64(ticket_number)
+    
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -58,7 +62,9 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, company_na
             <p>You have been invited to attend the <strong>Teacher Appreciation Dinner</strong> as a guest of <strong>{company_name}</strong>.</p>
             
             <div style="background-color: #f7fafc; border: 2px solid #2c5282; padding: 20px; margin: 20px 0; text-align: center;">
-                <h2 style="color: #2c5282; margin: 0;">Ticket #{ticket_number}</h2>
+                <img src="data:image/png;base64,{qr_base64}" alt="QR Code" style="width: 150px; height: 150px;">
+                <h2 style="color: #2c5282; margin: 10px 0; font-size: 32px; letter-spacing: 5px;">{ticket_number}</h2>
+                <p style="color: #666; font-size: 12px;">Scan QR code or provide this number at check-in</p>
             </div>
             
             <h3>Event Details:</h3>
@@ -124,7 +130,16 @@ EVENT_DETAILS = {
 }
 
 def generate_ticket_number():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    return str(random.randint(10000, 99999))
+
+def generate_qr_code_base64(ticket_number):
+    qr = qrcode.QRCode(version=1, box_size=10, border=2)
+    qr.add_data(ticket_number)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -237,13 +252,18 @@ def mark_ticket_printed(ticket_id):
         return False
 
 def generate_printable_ticket(ticket_number, recipient_name, company_name):
+    qr_base64 = generate_qr_code_base64(ticket_number)
     return f"""
     <div style="border: 2px solid #333; padding: 20px; margin: 10px; max-width: 400px; font-family: Arial, sans-serif;">
         <h2 style="text-align: center; color: #2c5282;">{EVENT_DETAILS['name']}</h2>
         <hr>
+        <div style="text-align: center; margin: 15px 0;">
+            <img src="data:image/png;base64,{qr_base64}" alt="QR Code" style="width: 150px; height: 150px;">
+            <h3 style="margin: 10px 0; font-size: 24px; letter-spacing: 3px;">{ticket_number}</h3>
+        </div>
+        <hr>
         <p><strong>Guest:</strong> {recipient_name if recipient_name else 'TBD'}</p>
         <p><strong>Sponsored by:</strong> {company_name}</p>
-        <p><strong>Ticket #:</strong> {ticket_number}</p>
         <hr>
         <p><strong>Date:</strong> {EVENT_DETAILS['date']}</p>
         <p><strong>Venue:</strong> {EVENT_DETAILS['venue']}</p>
