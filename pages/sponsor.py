@@ -253,7 +253,7 @@ def mark_ticket_printed(ticket_id):
 
 def generate_printable_ticket(ticket_number, recipient_name, company_name):
     qr_base64 = generate_qr_code_base64(ticket_number)
-    return f"""
+    ticket_html = f"""
     <div style="border: 2px solid #333; padding: 20px; margin: 10px; max-width: 400px; font-family: Arial, sans-serif;">
         <h2 style="text-align: center; color: #2c5282;">{EVENT_DETAILS['name']}</h2>
         <hr>
@@ -273,6 +273,28 @@ def generate_printable_ticket(ticket_number, recipient_name, company_name):
         <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
     </div>
     """
+    
+    print_script = f"""
+    <button onclick="printTicket_{ticket_number}()" style="background-color: #2c5282; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 0; font-size: 16px;">
+        Print This Ticket
+    </button>
+    <script>
+    function printTicket_{ticket_number}() {{
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Ticket {ticket_number}</title></head><body>');
+        printWindow.document.write(`{ticket_html.replace('`', '\\`')}`);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(function() {{
+            printWindow.print();
+            printWindow.close();
+        }}, 250);
+    }}
+    </script>
+    """
+    
+    return ticket_html + print_script
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'rotaryadmin2026')
