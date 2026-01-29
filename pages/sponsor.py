@@ -262,13 +262,13 @@ def generate_printable_ticket(ticket_number, recipient_name, company_name):
             <h3 style="margin: 10px 0; font-size: 24px; letter-spacing: 3px;">{ticket_number}</h3>
         </div>
         <hr>
-        <p><strong>Guest:</strong> {recipient_name if recipient_name else 'TBD'}</p>
+        <p><strong>Guest:</strong> {recipient_name if recipient_name else '_______________________'}</p>
         <p><strong>Sponsored by:</strong> {company_name}</p>
         <hr>
         <p><strong>Date:</strong> {EVENT_DETAILS['date']}</p>
         <p><strong>Venue:</strong> {EVENT_DETAILS['venue']}</p>
         <p><strong>Address:</strong> {EVENT_DETAILS['address']}</p>
-        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']}</p>
+        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']} | <strong>End Time:</strong> {EVENT_DETAILS['end_time']}</p>
         <p><strong>Dinner Served:</strong> {EVENT_DETAILS['dinner_served']}</p>
         <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
         <hr>
@@ -305,13 +305,13 @@ def generate_printable_html_file(ticket_number, recipient_name, company_name):
             <h3 class="ticket-number">{ticket_number}</h3>
         </div>
         <hr>
-        <p><strong>Guest:</strong> {recipient_name if recipient_name else 'TBD'}</p>
+        <p><strong>Guest:</strong> {recipient_name if recipient_name else '_______________________'}</p>
         <p><strong>Sponsored by:</strong> {company_name}</p>
         <hr>
         <p><strong>Date:</strong> {EVENT_DETAILS['date']}</p>
         <p><strong>Venue:</strong> {EVENT_DETAILS['venue']}</p>
         <p><strong>Address:</strong> {EVENT_DETAILS['address']}</p>
-        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']}</p>
+        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']} | <strong>End Time:</strong> {EVENT_DETAILS['end_time']}</p>
         <p><strong>Dinner Served:</strong> {EVENT_DETAILS['dinner_served']}</p>
         <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
         <hr>
@@ -360,13 +360,13 @@ def generate_all_tickets_html(tickets, company_name):
             <h3 class="ticket-number">{ticket_number}</h3>
         </div>
         <hr>
-        <p><strong>Guest:</strong> {name if name else 'TBD'}</p>
+        <p><strong>Guest:</strong> {name if name else '_______________________'}</p>
         <p><strong>Sponsored by:</strong> {company_name}</p>
         <hr>
         <p><strong>Date:</strong> {EVENT_DETAILS['date']}</p>
         <p><strong>Venue:</strong> {EVENT_DETAILS['venue']}</p>
         <p><strong>Address:</strong> {EVENT_DETAILS['address']}</p>
-        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']}</p>
+        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']} | <strong>End Time:</strong> {EVENT_DETAILS['end_time']}</p>
         <p><strong>Dinner Served:</strong> {EVENT_DETAILS['dinner_served']}</p>
         <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
         <hr>
