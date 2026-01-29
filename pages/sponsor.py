@@ -271,6 +271,8 @@ def generate_printable_ticket(ticket_number, recipient_name, company_name):
         <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']}</p>
         <p><strong>Dinner Served:</strong> {EVENT_DETAILS['dinner_served']}</p>
         <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
+        <hr>
+        <p style="text-align: center; font-style: italic; color: #666;"><strong>This ticket is valid for one adult entry only.</strong></p>
     </div>
     """
     return ticket_html
@@ -287,6 +289,7 @@ def generate_printable_html_file(ticket_number, recipient_name, company_name):
         h2 {{ text-align: center; color: #2c5282; }}
         .qr-section {{ text-align: center; margin: 15px 0; }}
         .ticket-number {{ font-size: 24px; letter-spacing: 3px; margin: 10px 0; }}
+        .valid-note {{ text-align: center; font-style: italic; color: #666; }}
         @media print {{
             body {{ margin: 0; }}
             .no-print {{ display: none; }}
@@ -311,9 +314,70 @@ def generate_printable_html_file(ticket_number, recipient_name, company_name):
         <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']}</p>
         <p><strong>Dinner Served:</strong> {EVENT_DETAILS['dinner_served']}</p>
         <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
+        <hr>
+        <p class="valid-note"><strong>This ticket is valid for one adult entry only.</strong></p>
     </div>
 </body>
 </html>"""
+
+def generate_all_tickets_html(tickets, company_name):
+    html_content = """<!DOCTYPE html>
+<html>
+<head>
+    <title>All Tickets</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        .ticket { 
+            border: 2px solid #333; 
+            padding: 20px; 
+            max-width: 400px; 
+            margin: 20px auto;
+            page-break-after: always;
+        }
+        .ticket:last-child { page-break-after: avoid; }
+        h2 { text-align: center; color: #2c5282; margin-top: 0; }
+        .qr-section { text-align: center; margin: 15px 0; }
+        .ticket-number { font-size: 24px; letter-spacing: 3px; margin: 10px 0; }
+        .valid-note { text-align: center; font-style: italic; color: #666; }
+        @media print {
+            body { margin: 0; }
+            .ticket { margin: 0 auto; border: 2px solid #333; }
+        }
+    </style>
+</head>
+<body onload="window.print();">
+"""
+    
+    for ticket in tickets:
+        ticket_id, ticket_number, email, name, sent_at, printed_at = ticket
+        qr_base64 = generate_qr_code_base64(ticket_number)
+        html_content += f"""
+    <div class="ticket">
+        <h2>{EVENT_DETAILS['name']}</h2>
+        <hr>
+        <div class="qr-section">
+            <img src="data:image/png;base64,{qr_base64}" alt="QR Code" style="width: 150px; height: 150px;">
+            <h3 class="ticket-number">{ticket_number}</h3>
+        </div>
+        <hr>
+        <p><strong>Guest:</strong> {name if name else 'TBD'}</p>
+        <p><strong>Sponsored by:</strong> {company_name}</p>
+        <hr>
+        <p><strong>Date:</strong> {EVENT_DETAILS['date']}</p>
+        <p><strong>Venue:</strong> {EVENT_DETAILS['venue']}</p>
+        <p><strong>Address:</strong> {EVENT_DETAILS['address']}</p>
+        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']}</p>
+        <p><strong>Dinner Served:</strong> {EVENT_DETAILS['dinner_served']}</p>
+        <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
+        <hr>
+        <p class="valid-note"><strong>This ticket is valid for one adult entry only.</strong></p>
+    </div>
+"""
+    
+    html_content += """
+</body>
+</html>"""
+    return html_content
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'rotaryadmin2026')
@@ -465,6 +529,17 @@ else:
     
     assigned_count = sum(1 for t in tickets if t[2] or t[5])
     st.write(f"**Assigned:** {assigned_count} / {sponsor['total_seats']}")
+    
+    if tickets:
+        all_tickets_html = generate_all_tickets_html(tickets, sponsor['company_name'])
+        st.download_button(
+            label="Print All Tickets",
+            data=all_tickets_html,
+            file_name=f"all_tickets_{sponsor['company_name'].replace(' ', '_')}.html",
+            mime="text/html",
+            help="Download and open to print all tickets at once (one per page)",
+            type="primary"
+        )
     
     for ticket in tickets:
         ticket_id, ticket_number, email, name, sent_at, printed_at = ticket
