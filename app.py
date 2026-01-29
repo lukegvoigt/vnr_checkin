@@ -387,6 +387,8 @@ else:
         st.header("Attendee List")
 
         # Query and display attendees from database
+        conn = None
+        cur = None
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
