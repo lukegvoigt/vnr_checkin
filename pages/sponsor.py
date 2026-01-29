@@ -254,15 +254,55 @@ def generate_printable_ticket(ticket_number, recipient_name, company_name):
     </div>
     """
 
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'rotaryadmin2026')
+
+def get_all_sponsors():
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, username, company_name, sponsor_level, total_seats
+            FROM sponsors
+            WHERE year = %s
+            ORDER BY sponsor_level, company_name
+        """, (CURRENT_YEAR,))
+        sponsors = cur.fetchall()
+        cur.close()
+        conn.close()
+        return sponsors
+    except Exception as e:
+        st.error(f"Database error: {e}")
+        return []
+
+def get_all_tickets_for_sponsor(sponsor_id):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT ticket_number, recipient_name, recipient_email, sent_at, printed_at
+            FROM sponsor_tickets
+            WHERE sponsor_id = %s AND year = %s
+            ORDER BY id
+        """, (sponsor_id, CURRENT_YEAR))
+        tickets = cur.fetchall()
+        cur.close()
+        conn.close()
+        return tickets
+    except Exception as e:
+        return []
+
 if 'sponsor_authenticated' not in st.session_state:
     st.session_state.sponsor_authenticated = False
 if 'sponsor_info' not in st.session_state:
     st.session_state.sponsor_info = None
+if 'is_admin' not in st.session_state:
+    st.session_state.is_admin = False
 
 st.title("Sponsor Portal")
 st.subheader(EVENT_DETAILS['name'])
 
-if not st.session_state.sponsor_authenticated:
+if not st.session_state.sponsor_authenticated and not st.session_state.is_admin:
     st.write("Please log in with your sponsor credentials.")
     
     with st.form("sponsor_login"):
@@ -271,14 +311,67 @@ if not st.session_state.sponsor_authenticated:
         submit = st.form_submit_button("Login")
         
         if submit:
-            sponsor = get_sponsor_info(username, password)
-            if sponsor:
-                st.session_state.sponsor_authenticated = True
-                st.session_state.sponsor_info = sponsor
-                create_tickets_for_sponsor(sponsor['id'], sponsor['total_seats'])
+            if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+                st.session_state.is_admin = True
                 st.rerun()
             else:
-                st.error("Invalid username or password")
+                sponsor = get_sponsor_info(username, password)
+                if sponsor:
+                    st.session_state.sponsor_authenticated = True
+                    st.session_state.sponsor_info = sponsor
+                    create_tickets_for_sponsor(sponsor['id'], sponsor['total_seats'])
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password")
+
+elif st.session_state.is_admin:
+    if st.button("Logout"):
+        st.session_state.is_admin = False
+        st.rerun()
+    
+    st.markdown("---")
+    st.header("Admin Dashboard")
+    
+    sponsors = get_all_sponsors()
+    
+    total_sponsors = len(sponsors)
+    total_seats = sum(s[4] for s in sponsors)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Sponsors", total_sponsors)
+    with col2:
+        st.metric("Total Seats", total_seats)
+    
+    st.markdown("---")
+    st.subheader("All Sponsors")
+    
+    level_order = {'Diamond': 1, 'Platinum': 2, 'Gold': 3, 'Silver': 4}
+    sponsors_sorted = sorted(sponsors, key=lambda x: (level_order.get(x[3], 99), x[2]))
+    
+    for sponsor in sponsors_sorted:
+        sponsor_id, username, company_name, level, seats = sponsor
+        tickets = get_all_tickets_for_sponsor(sponsor_id)
+        assigned = sum(1 for t in tickets if t[1] or t[3] or t[4])
+        
+        with st.expander(f"{company_name} ({level}) - {assigned}/{seats} assigned"):
+            st.write(f"**Username:** {username}")
+            st.write(f"**Level:** {level}")
+            st.write(f"**Seats:** {seats}")
+            st.write(f"**Assigned:** {assigned}")
+            
+            if tickets:
+                st.write("**Tickets:**")
+                for ticket in tickets:
+                    ticket_num, name, email, sent, printed = ticket
+                    status = "Available"
+                    if sent:
+                        status = f"Emailed to {email}"
+                    elif printed:
+                        status = "Printed"
+                    elif name:
+                        status = f"Assigned to {name}"
+                    st.write(f"- {ticket_num}: {status}")
 else:
     sponsor = st.session_state.sponsor_info
     
