@@ -75,7 +75,7 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, company_na
             <p>We look forward to seeing you!</p>
         </div>
         <div style="background-color: #edf2f7; padding: 10px; text-align: center; font-size: 12px;">
-            <p>Rotary Teacher Appreciation Dinner</p>
+            <p>Valdosta-North Rotary Teacher Appreciation Dinner</p>
         </div>
     </body>
     </html>

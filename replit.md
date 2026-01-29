@@ -39,4 +39,4 @@ This is an event check-in system for the Teacher Appreciation Dinner. It include
 
 ## User Preferences
 - Non-technical user - use simple language
-- Event organizer for Rotary Teacher Appreciation Dinner
+- Event organizer for Valdosta-North Rotary Teacher Appreciation Dinner
