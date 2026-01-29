@@ -18,18 +18,27 @@ def setup_gmail():
         return
     
     try:
+        print(f"Reading file: {creds_file}")
         with open(creds_file, 'r') as f:
-            client_config = json.load(f)
+            content = f.read()
+            print(f"File size: {len(content)} bytes")
+            client_config = json.loads(content)
+        
+        print(f"Keys found: {list(client_config.keys())}")
         
         if 'installed' in client_config:
             client_id = client_config['installed']['client_id']
             client_secret = client_config['installed']['client_secret']
+            print("Using 'installed' credentials")
         elif 'web' in client_config:
             client_id = client_config['web']['client_id']
             client_secret = client_config['web']['client_secret']
+            print("Using 'web' credentials")
         else:
             print("Error: Invalid credentials file format")
             return
+        
+        print(f"Client ID: {client_id[:20]}...")
         
         print("\n" + "=" * 50)
         print("STEP 1: Open this URL in your LOCAL computer's browser:")
