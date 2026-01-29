@@ -254,7 +254,7 @@ def mark_ticket_printed(ticket_id):
 def generate_printable_ticket(ticket_number, recipient_name, company_name):
     qr_base64 = generate_qr_code_base64(ticket_number)
     ticket_html = f"""
-    <div style="border: 2px solid #333; padding: 20px; margin: 10px; max-width: 400px; font-family: Arial, sans-serif;">
+    <div id="ticket-{ticket_number}" style="border: 2px solid #333; padding: 20px; margin: 10px; max-width: 400px; font-family: Arial, sans-serif;">
         <h2 style="text-align: center; color: #2c5282;">{EVENT_DETAILS['name']}</h2>
         <hr>
         <div style="text-align: center; margin: 15px 0;">
@@ -273,28 +273,47 @@ def generate_printable_ticket(ticket_number, recipient_name, company_name):
         <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
     </div>
     """
-    
-    print_script = f"""
-    <button onclick="printTicket_{ticket_number}()" style="background-color: #2c5282; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 0; font-size: 16px;">
-        Print This Ticket
-    </button>
-    <script>
-    function printTicket_{ticket_number}() {{
-        var printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>Ticket {ticket_number}</title></head><body>');
-        printWindow.document.write(`{ticket_html.replace('`', '\\`')}`);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(function() {{
-            printWindow.print();
-            printWindow.close();
-        }}, 250);
-    }}
-    </script>
-    """
-    
-    return ticket_html + print_script
+    return ticket_html
+
+def generate_printable_html_file(ticket_number, recipient_name, company_name):
+    qr_base64 = generate_qr_code_base64(ticket_number)
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Ticket {ticket_number}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        .ticket {{ border: 2px solid #333; padding: 20px; max-width: 400px; margin: auto; }}
+        h2 {{ text-align: center; color: #2c5282; }}
+        .qr-section {{ text-align: center; margin: 15px 0; }}
+        .ticket-number {{ font-size: 24px; letter-spacing: 3px; margin: 10px 0; }}
+        @media print {{
+            body {{ margin: 0; }}
+            .no-print {{ display: none; }}
+        }}
+    </style>
+</head>
+<body onload="window.print();">
+    <div class="ticket">
+        <h2>{EVENT_DETAILS['name']}</h2>
+        <hr>
+        <div class="qr-section">
+            <img src="data:image/png;base64,{qr_base64}" alt="QR Code" style="width: 150px; height: 150px;">
+            <h3 class="ticket-number">{ticket_number}</h3>
+        </div>
+        <hr>
+        <p><strong>Guest:</strong> {recipient_name if recipient_name else 'TBD'}</p>
+        <p><strong>Sponsored by:</strong> {company_name}</p>
+        <hr>
+        <p><strong>Date:</strong> {EVENT_DETAILS['date']}</p>
+        <p><strong>Venue:</strong> {EVENT_DETAILS['venue']}</p>
+        <p><strong>Address:</strong> {EVENT_DETAILS['address']}</p>
+        <p><strong>Doors Open:</strong> {EVENT_DETAILS['doors_open']}</p>
+        <p><strong>Dinner Served:</strong> {EVENT_DETAILS['dinner_served']}</p>
+        <p><strong>Keynote Speaker:</strong> {EVENT_DETAILS['keynote_speaker']}</p>
+    </div>
+</body>
+</html>"""
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'rotaryadmin2026')
@@ -492,3 +511,12 @@ else:
             
             st.markdown("### Print Preview")
             st.markdown(generate_printable_ticket(ticket_number, name, sponsor['company_name']), unsafe_allow_html=True)
+            
+            printable_html = generate_printable_html_file(ticket_number, name, sponsor['company_name'])
+            st.download_button(
+                label="Download & Print Ticket",
+                data=printable_html,
+                file_name=f"ticket_{ticket_number}.html",
+                mime="text/html",
+                help="Download this file and open it - it will automatically open the print dialog"
+            )
