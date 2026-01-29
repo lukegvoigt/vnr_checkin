@@ -12,10 +12,6 @@ run = ["sh", "-c", "streamlit run app.py"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 8501
-externalPort = 80
-
 [agent]
 expertMode = true
 integrations = ["google-mail:1.0.0"]
@@ -36,10 +32,10 @@ args = "Streamlit App"
 name = "Streamlit App"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "streamlit run app.py --server.port 5000 --server.address 0.0.0.0"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run app.py --server.port 5000 --server.address 0.0.0.0 --browser.gatherUsageStats false"
+waitForPort = 5000
