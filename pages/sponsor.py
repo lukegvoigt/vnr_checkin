@@ -578,11 +578,7 @@ else:
                     recipient_name = st.text_input("Recipient Name", key=f"name_{ticket_id}")
                     recipient_email = st.text_input("Recipient Email", key=f"email_{ticket_id}")
                     
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        send_email_btn = st.form_submit_button("Send via Email", type="primary")
-                    with col2:
-                        print_ticket = st.form_submit_button("Print Ticket")
+                    send_email_btn = st.form_submit_button("Send via Email", type="primary")
                     
                     if send_email_btn:
                         if not recipient_name:
@@ -597,22 +593,16 @@ else:
                                 st.rerun()
                             else:
                                 st.error(f"Failed to send email: {message}")
-                    
-                    if print_ticket:
-                        if recipient_name:
-                            update_ticket_email(ticket_id, recipient_email if recipient_email else None, recipient_name)
-                        mark_ticket_printed(ticket_id)
-                        st.success("Ticket assigned! You can now print it below.")
-                        st.rerun()
+                
+                printable_html = generate_printable_html_file(ticket_number, name, sponsor['company_name'])
+                st.download_button(
+                    label="Download & Print Ticket",
+                    data=printable_html,
+                    file_name=f"ticket_{ticket_number}.html",
+                    mime="text/html",
+                    help="Download this file and open it - it will automatically open the print dialog",
+                    key=f"download_{ticket_id}"
+                )
             
             st.markdown("### Print Preview")
             st.markdown(generate_printable_ticket(ticket_number, name, sponsor['company_name']), unsafe_allow_html=True)
-            
-            printable_html = generate_printable_html_file(ticket_number, name, sponsor['company_name'])
-            st.download_button(
-                label="Download & Print Ticket",
-                data=printable_html,
-                file_name=f"ticket_{ticket_number}.html",
-                mime="text/html",
-                help="Download this file and open it - it will automatically open the print dialog"
-            )
