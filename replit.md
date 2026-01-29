@@ -35,10 +35,7 @@ This is an event check-in system for the Teacher Appreciation Dinner. It include
 - January 2026: Backed up 2025 data to attendees_backup_2025.csv
 
 ## Notes
-- Email integration: User dismissed SendGrid integration. If email sending is needed later, will need to either:
-  1. Set up SendGrid integration through Replit
-  2. Provide a SENDGRID_API_KEY secret manually
-  Currently, the sponsor portal supports print-only ticket distribution.
+- Email integration: Gmail connected via Google Workspace. Sponsors can now email tickets directly to recipients through the sponsor portal.
 
 ## User Preferences
 - Non-technical user - use simple language
