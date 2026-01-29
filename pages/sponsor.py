@@ -15,6 +15,27 @@ from io import BytesIO
 st.set_page_config(page_title="Sponsor Portal", page_icon="🎟️", layout="wide")
 
 def get_gmail_access_token():
+    client_id = os.environ.get('GOOGLE_CLIENT_ID')
+    client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
+    refresh_token = os.environ.get('GOOGLE_REFRESH_TOKEN')
+    
+    if client_id and client_secret and refresh_token:
+        try:
+            response = requests.post(
+                'https://oauth2.googleapis.com/token',
+                data={
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                    'refresh_token': refresh_token,
+                    'grant_type': 'refresh_token'
+                }
+            )
+            if response.status_code == 200:
+                return response.json().get('access_token')
+        except Exception as e:
+            st.error(f"Error refreshing token: {e}")
+            return None
+    
     hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME')
     repl_identity = os.environ.get('REPL_IDENTITY')
     web_repl_renewal = os.environ.get('WEB_REPL_RENEWAL')
