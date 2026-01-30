@@ -541,30 +541,50 @@ if 'sponsor_info' not in st.session_state:
 if 'is_admin' not in st.session_state:
     st.session_state.is_admin = False
 
+query_params = st.query_params
+url_username = query_params.get("sponsor", None)
+
 st.title("Sponsor Portal")
 st.subheader(EVENT_DETAILS['name'])
 
 if not st.session_state.sponsor_authenticated and not st.session_state.is_admin:
-    st.write("Please log in with your sponsor credentials.")
-    
-    with st.form("sponsor_login"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submit = st.form_submit_button("Login")
+    if url_username:
+        st.write(f"Welcome! Please enter your password to continue.")
         
-        if submit:
-            if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-                st.session_state.is_admin = True
-                st.rerun()
-            else:
-                sponsor = get_sponsor_info(username, password)
+        with st.form("sponsor_login_simple"):
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Login")
+            
+            if submit:
+                sponsor = get_sponsor_info(url_username, password)
                 if sponsor:
                     st.session_state.sponsor_authenticated = True
                     st.session_state.sponsor_info = sponsor
                     create_tickets_for_sponsor(sponsor['id'], sponsor['total_seats'])
                     st.rerun()
                 else:
-                    st.error("Invalid username or password")
+                    st.error("Invalid password")
+    else:
+        st.write("Please log in with your sponsor credentials.")
+        
+        with st.form("sponsor_login"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Login")
+            
+            if submit:
+                if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+                    st.session_state.is_admin = True
+                    st.rerun()
+                else:
+                    sponsor = get_sponsor_info(username, password)
+                    if sponsor:
+                        st.session_state.sponsor_authenticated = True
+                        st.session_state.sponsor_info = sponsor
+                        create_tickets_for_sponsor(sponsor['id'], sponsor['total_seats'])
+                        st.rerun()
+                    else:
+                        st.error("Invalid username or password")
 
 elif st.session_state.is_admin:
     if st.button("Logout"):
