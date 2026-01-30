@@ -109,7 +109,7 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, company_na
     """
     
     sender_email = os.environ.get('GMAIL_SENDER_EMAIL', 'noreply@example.com')
-    sender_name = os.environ.get('GMAIL_SENDER_NAME', 'Teacher Appreciation Dinner')
+    sender_name = os.environ.get('GMAIL_SENDER_NAME', 'Valdosta-North Rotary')
     
     message = MIMEMultipart('alternative')
     message['From'] = f"{sender_name} <{sender_email}>"
