@@ -437,6 +437,68 @@ def delete_sponsor(sponsor_id):
     except Exception as e:
         return False, str(e)
 
+def update_sponsor_password(sponsor_id, new_password):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("UPDATE sponsors SET password = %s WHERE id = %s AND year = %s", 
+                    (new_password, sponsor_id, CURRENT_YEAR))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+def get_sponsor_tickets_admin(sponsor_id):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, ticket_number, recipient_name, recipient_email, sent_at, printed_at
+            FROM sponsor_tickets
+            WHERE sponsor_id = %s AND year = %s
+            ORDER BY id
+        """, (sponsor_id, CURRENT_YEAR))
+        tickets = cur.fetchall()
+        cur.close()
+        conn.close()
+        return tickets
+    except Exception as e:
+        return []
+
+def update_ticket_admin(ticket_id, recipient_name, recipient_email):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE sponsor_tickets 
+            SET recipient_name = %s, recipient_email = %s
+            WHERE id = %s
+        """, (recipient_name if recipient_name else None, recipient_email if recipient_email else None, ticket_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+def mark_ticket_printed_admin(ticket_id):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE sponsor_tickets 
+            SET printed_at = NOW()
+            WHERE id = %s
+        """, (ticket_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
 def get_all_sponsors():
     try:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -561,14 +623,24 @@ elif st.session_state.is_admin:
         assigned = sum(1 for t in tickets if t[1] or t[3] or t[4])
         
         with st.expander(f"{company_name} ({level}) - {assigned}/{seats} assigned"):
-            col1, col2 = st.columns([3, 1])
+            col1, col2, col3 = st.columns([2, 1, 1])
             with col1:
                 st.write(f"**Username:** {username}")
-                st.write(f"**Level:** {level}")
-                st.write(f"**Seats:** {seats}")
-                st.write(f"**Assigned:** {assigned}")
+                st.write(f"**Level:** {level} | **Seats:** {seats} | **Assigned:** {assigned}")
             with col2:
-                if st.button("Delete", key=f"del_{sponsor_id}", type="secondary"):
+                new_pw = st.text_input("New Password", key=f"pw_{sponsor_id}", placeholder="Enter new password")
+                if st.button("Change Password", key=f"pwbtn_{sponsor_id}"):
+                    if new_pw:
+                        success, error = update_sponsor_password(sponsor_id, new_pw)
+                        if success:
+                            st.success("Password updated!")
+                            st.rerun()
+                        else:
+                            st.error(f"Failed: {error}")
+                    else:
+                        st.warning("Enter a password first")
+            with col3:
+                if st.button("Delete Sponsor", key=f"del_{sponsor_id}", type="secondary"):
                     success, error = delete_sponsor(sponsor_id)
                     if success:
                         st.success(f"Deleted {company_name}")
@@ -576,18 +648,46 @@ elif st.session_state.is_admin:
                     else:
                         st.error(f"Failed: {error}")
             
-            if tickets:
-                st.write("**Tickets:**")
-                for ticket in tickets:
-                    ticket_num, name, email, sent, printed = ticket
-                    status = "Available"
+            st.markdown("---")
+            st.write("**Tickets:**")
+            
+            admin_tickets = get_sponsor_tickets_admin(sponsor_id)
+            
+            if not admin_tickets:
+                create_tickets_for_sponsor(sponsor_id, seats)
+                admin_tickets = get_sponsor_tickets_admin(sponsor_id)
+            
+            for tkt in admin_tickets:
+                tkt_id, ticket_num, tkt_name, tkt_email, sent, printed = tkt
+                
+                tcol1, tcol2, tcol3, tcol4 = st.columns([1, 2, 2, 1])
+                with tcol1:
+                    st.write(f"**{ticket_num}**")
                     if sent:
-                        status = f"Emailed to {email}"
+                        st.caption("Emailed")
                     elif printed:
-                        status = "Printed"
-                    elif name:
-                        status = f"Assigned to {name}"
-                    st.write(f"- {ticket_num}: {status}")
+                        st.caption("Printed")
+                with tcol2:
+                    new_name = st.text_input("Guest Name", value=tkt_name or "", key=f"name_{tkt_id}", label_visibility="collapsed", placeholder="Guest name")
+                with tcol3:
+                    new_email = st.text_input("Email", value=tkt_email or "", key=f"email_{tkt_id}", label_visibility="collapsed", placeholder="Email (optional)")
+                with tcol4:
+                    btn_col1, btn_col2 = st.columns(2)
+                    with btn_col1:
+                        if st.button("Save", key=f"save_{tkt_id}"):
+                            success, error = update_ticket_admin(tkt_id, new_name, new_email)
+                            if success:
+                                st.rerun()
+                    with btn_col2:
+                        ticket_html = generate_ticket_html(ticket_num, new_name or "")
+                        st.download_button(
+                            "Print",
+                            ticket_html,
+                            file_name=f"ticket_{ticket_num}.html",
+                            mime="text/html",
+                            key=f"print_{tkt_id}",
+                            on_click=lambda tid=tkt_id: mark_ticket_printed_admin(tid)
+                        )
 else:
     sponsor = st.session_state.sponsor_info
     
