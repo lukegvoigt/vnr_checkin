@@ -407,6 +407,36 @@ def generate_all_tickets_html(tickets, company_name):
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'rotaryadmin2026')
 
+def add_sponsor(username, password, company_name, sponsor_level, total_seats):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO sponsors (username, password, company_name, sponsor_level, total_seats, year)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (username, password, company_name, sponsor_level, total_seats, CURRENT_YEAR))
+        sponsor_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        return sponsor_id, None
+    except Exception as e:
+        return None, str(e)
+
+def delete_sponsor(sponsor_id):
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("DELETE FROM sponsor_tickets WHERE sponsor_id = %s AND year = %s", (sponsor_id, CURRENT_YEAR))
+        cur.execute("DELETE FROM sponsors WHERE id = %s AND year = %s", (sponsor_id, CURRENT_YEAR))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
 def get_all_sponsors():
     try:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -494,6 +524,32 @@ elif st.session_state.is_admin:
         st.metric("Total Seats", total_seats)
     
     st.markdown("---")
+    st.subheader("Add New Sponsor")
+    
+    with st.form("add_sponsor_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            new_company = st.text_input("Company Name")
+            new_username = st.text_input("Username (for login)")
+            new_password = st.text_input("Password (for login)")
+        with col2:
+            new_level = st.selectbox("Sponsor Level", ["Diamond", "Platinum", "Gold", "Silver"])
+            new_seats = st.number_input("Number of Seats", min_value=1, max_value=50, value=10)
+        
+        add_btn = st.form_submit_button("Add Sponsor", type="primary")
+        
+        if add_btn:
+            if not new_company or not new_username or not new_password:
+                st.error("Please fill in all fields")
+            else:
+                sponsor_id, error = add_sponsor(new_username, new_password, new_company, new_level, new_seats)
+                if sponsor_id:
+                    st.success(f"Added sponsor: {new_company}")
+                    st.rerun()
+                else:
+                    st.error(f"Failed to add sponsor: {error}")
+    
+    st.markdown("---")
     st.subheader("All Sponsors")
     
     level_order = {'Diamond': 1, 'Platinum': 2, 'Gold': 3, 'Silver': 4}
@@ -505,10 +561,20 @@ elif st.session_state.is_admin:
         assigned = sum(1 for t in tickets if t[1] or t[3] or t[4])
         
         with st.expander(f"{company_name} ({level}) - {assigned}/{seats} assigned"):
-            st.write(f"**Username:** {username}")
-            st.write(f"**Level:** {level}")
-            st.write(f"**Seats:** {seats}")
-            st.write(f"**Assigned:** {assigned}")
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write(f"**Username:** {username}")
+                st.write(f"**Level:** {level}")
+                st.write(f"**Seats:** {seats}")
+                st.write(f"**Assigned:** {assigned}")
+            with col2:
+                if st.button("Delete", key=f"del_{sponsor_id}", type="secondary"):
+                    success, error = delete_sponsor(sponsor_id)
+                    if success:
+                        st.success(f"Deleted {company_name}")
+                        st.rerun()
+                    else:
+                        st.error(f"Failed: {error}")
             
             if tickets:
                 st.write("**Tickets:**")
