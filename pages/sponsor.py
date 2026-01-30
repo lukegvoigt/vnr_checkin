@@ -759,7 +759,8 @@ else:
                             success, message = send_ticket_email(recipient_email, recipient_name, ticket_number, sponsor['company_name'])
                             if success:
                                 update_ticket_email(ticket_id, recipient_email, recipient_name)
-                                st.success(f"Ticket sent to {recipient_email}!")
+                                st.success(f"Email sent to {recipient_email}! Please have the recipient check their Spam/Junk folder if the email doesn't arrive in their inbox.")
+                                st.balloons()
                                 st.rerun()
                             else:
                                 st.error(f"Failed to send email: {message}")
