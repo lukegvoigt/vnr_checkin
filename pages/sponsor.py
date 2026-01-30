@@ -679,7 +679,7 @@ elif st.session_state.is_admin:
                             if success:
                                 st.rerun()
                     with btn_col2:
-                        ticket_html = generate_ticket_html(ticket_num, new_name or "")
+                        ticket_html = generate_printable_html_file(ticket_num, new_name or "", company_name)
                         st.download_button(
                             "Print",
                             ticket_html,
