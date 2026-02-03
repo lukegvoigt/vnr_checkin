@@ -639,29 +639,26 @@ elif st.session_state.is_admin:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             cur.execute("""
-                SELECT s.company_name, st.ticket_number
+                SELECT s.username, st.ticket_number
                 FROM sponsor_tickets st
                 JOIN sponsors s ON st.sponsor_id = s.id
                 WHERE st.year = %s
-                ORDER BY s.company_name, st.id
+                ORDER BY s.username, st.id
             """, (CURRENT_YEAR,))
             all_tickets = cur.fetchall()
             cur.close()
             conn.close()
             
             csv_rows = ["Name,Email,Type,School System,ticket_id,Table"]
-            company_counts = {}
+            username_counts = {}
             
-            for company_name, ticket_number in all_tickets:
-                words = company_name.split()
-                initials = ''.join([w[0].upper() for w in words if w])[:3]
+            for username, ticket_number in all_tickets:
+                if username not in username_counts:
+                    username_counts[username] = 0
+                username_counts[username] += 1
+                guest_num = username_counts[username]
                 
-                if company_name not in company_counts:
-                    company_counts[company_name] = 0
-                company_counts[company_name] += 1
-                guest_num = company_counts[company_name]
-                
-                name = f"{initials} Guest {guest_num}"
+                name = f"{username} Guest {guest_num}"
                 csv_rows.append(f"{name},N/A,Sponsor,N/A,{ticket_number},")
             
             csv_content = "\n".join(csv_rows)
