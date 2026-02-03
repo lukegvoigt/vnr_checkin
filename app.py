@@ -13,7 +13,7 @@ def get_attendee_info(code):
 
         # First check if the attendee exists and get their info
         cur.execute("""
-            SELECT first_name, last_name, school_system, bringing_plus_one, toty, status
+            SELECT first_name, last_name, school_system, bringing_plus_one, toty, status, table_number
             FROM attendees 
             WHERE qr_code = %s
         """, (code,))
@@ -21,7 +21,7 @@ def get_attendee_info(code):
         result = cur.fetchone()
 
         if result:
-            first_name, last_name, school_system, plus_one, toty, status = result
+            first_name, last_name, school_system, plus_one, toty, status, table_number = result
 
             # First get current checked_in status without updating
             cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
@@ -33,7 +33,8 @@ def get_attendee_info(code):
                 'plus_one': plus_one,
                 'checked_in': checked_in,
                 'toty': toty,
-                'status': status
+                'status': status,
+                'table_number': table_number
             }
             return info
         return None
@@ -46,6 +47,30 @@ def get_attendee_info(code):
             cur.close()
         if conn:
             conn.close()
+
+def display_seating_banner(status, table_number):
+    if status == 'Admin':
+        st.markdown("""
+            <div style="background-color: #28a745; color: white; padding: 15px; border-radius: 10px; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 15px;">
+                Admin Table
+            </div>
+        """, unsafe_allow_html=True)
+    elif status == 'Sponsor':
+        if table_number:
+            table_text = f"Sponsor Table #{table_number}"
+        else:
+            table_text = "Sponsor Table"
+        st.markdown(f"""
+            <div style="background-color: #FFD700; color: black; padding: 15px; border-radius: 10px; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 15px;">
+                {table_text}
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+            <div style="background-color: #6c757d; color: white; padding: 15px; border-radius: 10px; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 15px;">
+                General Open Seating
+            </div>
+        """, unsafe_allow_html=True)
 
 # Get password from environment variables
 my_secret = os.environ['password']
@@ -105,15 +130,16 @@ else:
         if qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
+                display_seating_banner(attendee['status'], attendee['table_number'])
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
                 st.write(f"**Type:** {attendee['status']}")
                 st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
                 if attendee['toty'] == 1:
                     st.markdown(":green[Teacher of the Year!]")
-                elif attendee['toty']:
+                elif attendee['toty'] == 2:
                     st.markdown(":green[Staff of the Year!]")
-                elif attendee['toty']:
+                elif attendee['toty'] == 3:
                     st.markdown(":green[Superintendent!]")
                 if attendee['checked_in'] != 0:
                     st.warning("Already checked in")
@@ -152,6 +178,7 @@ else:
         if submit_button and qr_code:
             attendee = get_attendee_info(qr_code)
             if attendee:
+                display_seating_banner(attendee['status'], attendee['table_number'])
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
                 st.write(f"**Type:** {attendee['status']}")
