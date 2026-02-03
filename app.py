@@ -138,7 +138,7 @@ if not st.session_state.authenticated:
 else:
     st.title("Event Check-in System")
 
-    tab1, tab2 = st.tabs(["📷 Check-in", "📋 Attendee List"])
+    tab1, tab2, tab3 = st.tabs(["📷 Check-in", "📋 Attendee List", "📥 Import Attendees"])
 
     with tab1:
         st.header("Scan QR Code")
@@ -497,3 +497,83 @@ else:
                 cur.close()
             if conn:
                 conn.close()
+
+    with tab3:
+        st.header("Import Attendees from CSV")
+        st.write("Upload a CSV file with the following columns:")
+        st.code("Name, Email, Type, School System, ticket_id")
+        st.write("**Type options:** School, Admin, TOTY, Guest, Sponsor, Rotary")
+        st.write("**School System options:** Lowndes County, Valdosta City, N/A")
+        
+        uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+        
+        if uploaded_file is not None:
+            try:
+                df = pd.read_csv(uploaded_file)
+                st.write("**Preview:**")
+                st.dataframe(df.head(10))
+                
+                expected_cols = ['Name', 'Email', 'Type', 'School System', 'ticket_id']
+                missing_cols = [col for col in expected_cols if col not in df.columns]
+                
+                if missing_cols:
+                    st.error(f"Missing columns: {', '.join(missing_cols)}")
+                else:
+                    st.write(f"**Total rows:** {len(df)}")
+                    
+                    if st.button("Import Attendees", type="primary"):
+                        try:
+                            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                            cur = conn.cursor()
+                            
+                            success_count = 0
+                            error_count = 0
+                            
+                            for _, row in df.iterrows():
+                                try:
+                                    full_name = str(row['Name']).strip()
+                                    name_parts = full_name.split(' ', 1)
+                                    first_name = name_parts[0] if len(name_parts) > 0 else ''
+                                    last_name = name_parts[1] if len(name_parts) > 1 else ''
+                                    
+                                    email = str(row['Email']).strip() if pd.notna(row['Email']) else ''
+                                    attendee_type = str(row['Type']).strip() if pd.notna(row['Type']) else ''
+                                    school_system = str(row['School System']).strip() if pd.notna(row['School System']) else 'N/A'
+                                    ticket_id = str(row['ticket_id']).strip() if pd.notna(row['ticket_id']) else ''
+                                    
+                                    toty_value = 0
+                                    if attendee_type == 'TOTY':
+                                        toty_value = 1
+                                    
+                                    status = attendee_type
+                                    
+                                    cur.execute("""
+                                        INSERT INTO attendees (first_name, last_name, email, status, school_system, qr_code, checked_in, toty, year)
+                                        VALUES (%s, %s, %s, %s, %s, %s, 0, %s, 2026)
+                                        ON CONFLICT (qr_code) DO UPDATE SET
+                                            first_name = EXCLUDED.first_name,
+                                            last_name = EXCLUDED.last_name,
+                                            email = EXCLUDED.email,
+                                            status = EXCLUDED.status,
+                                            school_system = EXCLUDED.school_system,
+                                            toty = EXCLUDED.toty
+                                    """, (first_name, last_name, email, status, school_system, ticket_id, toty_value))
+                                    success_count += 1
+                                except Exception as row_error:
+                                    error_count += 1
+                                    st.warning(f"Error importing row: {row['Name']} - {row_error}")
+                            
+                            conn.commit()
+                            st.success(f"Imported {success_count} attendees successfully!")
+                            if error_count > 0:
+                                st.warning(f"{error_count} rows had errors")
+                                
+                        except Exception as e:
+                            st.error(f"Database error: {e}")
+                        finally:
+                            if cur:
+                                cur.close()
+                            if conn:
+                                conn.close()
+            except Exception as e:
+                st.error(f"Error reading CSV: {e}")
