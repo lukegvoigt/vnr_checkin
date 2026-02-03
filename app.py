@@ -13,7 +13,7 @@ def get_attendee_info(code):
 
         # First check if the attendee exists and get their info
         cur.execute("""
-            SELECT first_name, last_name, school_system, bringing_plus_one, toty, grade_subject
+            SELECT first_name, last_name, school_system, bringing_plus_one, toty, status
             FROM attendees 
             WHERE qr_code = %s
         """, (code,))
@@ -21,7 +21,7 @@ def get_attendee_info(code):
         result = cur.fetchone()
 
         if result:
-            first_name, last_name, school_system, plus_one, toty, grade_subject = result
+            first_name, last_name, school_system, plus_one, toty, status = result
 
             # First get current checked_in status without updating
             cur.execute("SELECT checked_in FROM attendees WHERE qr_code = %s", (code,))
@@ -33,7 +33,7 @@ def get_attendee_info(code):
                 'plus_one': plus_one,
                 'checked_in': checked_in,
                 'toty': toty,
-                'grade_subject': grade_subject
+                'status': status
             }
             return info
         return None
@@ -47,50 +47,6 @@ def get_attendee_info(code):
         if conn:
             conn.close()
 
-    # Prepare data for insertion
-    data = [(
-        str(row['ID']),
-        row['Preferred Prefix (optional):'],
-        row['First Name'],
-        row['Last Name'],
-        row['Suffix (e.g. Jr., III)'],
-        row['School System'],
-        row['Grade / Subject (e.g. 3rd Grade / 10th Grade Math)'],
-        row['Bringing Plus One?'] == 'Yes',
-        row['Preferred Contact Email'],
-        row['Status'],
-        row['School Cleaned'],
-        row['qrCode'],
-        row['Attendance Response'],
-        False
-    ) for _, row in df.iterrows()]
-
-    # Insert data
-    cur.executemany("""
-    INSERT INTO attendees (
-        id, prefix, first_name, last_name, suffix, 
-        school_system, grade_subject, 
-        bringing_plus_one, email, status, school_cleaned,
-        qr_code, attendance_response, checked_in
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (id) DO UPDATE SET
-        prefix = EXCLUDED.prefix,
-        first_name = EXCLUDED.first_name,
-        last_name = EXCLUDED.last_name,
-        suffix = EXCLUDED.suffix,
-        school_system = EXCLUDED.school_system,
-        grade_subject = EXCLUDED.grade_subject,
-        bringing_plus_one = EXCLUDED.bringing_plus_one,
-        email = EXCLUDED.email,
-        status = EXCLUDED.status,
-        school_cleaned = EXCLUDED.school_cleaned,
-        qr_code = EXCLUDED.qr_code,
-        attendance_response = EXCLUDED.attendance_response
-    """, data)
-
-    conn.commit()
-    cur.close()
-    conn.close()
 # Get password from environment variables
 my_secret = os.environ['password']
 
@@ -151,7 +107,7 @@ else:
             if attendee:
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
-                st.write(f"**Grade/Subject:** {attendee['grade_subject']}")
+                st.write(f"**Type:** {attendee['status']}")
                 st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
                 if attendee['toty'] == 1:
                     st.markdown(":green[Teacher of the Year!]")
@@ -198,7 +154,7 @@ else:
             if attendee:
                 st.write(f"**Name:** {attendee['name']}")
                 st.write(f"**School System:** {attendee['school_system']}")
-                st.write(f"**Grade/Subject:** {attendee['grade_subject']}")
+                st.write(f"**Type:** {attendee['status']}")
                 st.write(f"**Bringing Plus One:** {'Yes' if attendee['plus_one'] else 'No'}")
                 if attendee['toty'] == 1:
                     st.markdown(":green[Teacher of the Year!]")
@@ -241,7 +197,7 @@ else:
 
                 # Search for matching names
                 cur.execute("""
-                    SELECT qr_code, first_name, last_name, school_system, school_cleaned, grade_subject, checked_in, toty
+                    SELECT qr_code, first_name, last_name, school_system, school_cleaned, status, checked_in, toty
                     FROM attendees 
                     WHERE LOWER(first_name) LIKE LOWER(%s) 
                     OR LOWER(last_name) LIKE LOWER(%s)
@@ -252,14 +208,14 @@ else:
 
                 if results:
                     for result in results:
-                        qr_code, first_name, last_name, school_system, school, grade, checked_in, toty = result
+                        qr_code, first_name, last_name, school_system, school, status, checked_in, toty = result
                         print(result)
                         col1, col2 = st.columns([3, 1])
                         with col1:
                             st.write(f"**{first_name} {last_name}**")
                             st.write(f"School System: {school_system}")
                             st.write(f"School: {school}")
-                            st.write(f"Grade/Subject: {grade}")
+                            st.write(f"Type: {status}")
                             if toty == 1:
                                 st.markdown(":green[Teacher of the Year!]")
                             elif toty == 2:
