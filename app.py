@@ -547,19 +547,24 @@ else:
                                     
                                     status = attendee_type
                                     
-                                    cur.execute("""
-                                        INSERT INTO attendees (first_name, last_name, email, status, school_system, qr_code, checked_in, toty, year)
-                                        VALUES (%s, %s, %s, %s, %s, %s, 0, %s, 2026)
-                                        ON CONFLICT (qr_code) DO UPDATE SET
-                                            first_name = EXCLUDED.first_name,
-                                            last_name = EXCLUDED.last_name,
-                                            email = EXCLUDED.email,
-                                            status = EXCLUDED.status,
-                                            school_system = EXCLUDED.school_system,
-                                            toty = EXCLUDED.toty
-                                    """, (first_name, last_name, email, status, school_system, ticket_id, toty_value))
+                                    cur.execute("SELECT qr_code FROM attendees WHERE qr_code = %s", (ticket_id,))
+                                    existing = cur.fetchone()
+                                    
+                                    if existing:
+                                        cur.execute("""
+                                            UPDATE attendees 
+                                            SET first_name = %s, last_name = %s, email = %s, status = %s, 
+                                                school_system = %s, toty = %s
+                                            WHERE qr_code = %s
+                                        """, (first_name, last_name, email, status, school_system, toty_value, ticket_id))
+                                    else:
+                                        cur.execute("""
+                                            INSERT INTO attendees (first_name, last_name, email, status, school_system, qr_code, checked_in, toty, year)
+                                            VALUES (%s, %s, %s, %s, %s, %s, 0, %s, 2026)
+                                        """, (first_name, last_name, email, status, school_system, ticket_id, toty_value))
                                     success_count += 1
                                 except Exception as row_error:
+                                    conn.rollback()
                                     error_count += 1
                                     st.warning(f"Error importing row: {row['Name']} - {row_error}")
                             
