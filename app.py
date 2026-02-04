@@ -394,7 +394,7 @@ else:
 
             # Convert to dataframe for display
             cur.execute("""
-                SELECT first_name, last_name, school_system, bringing_plus_one, checked_in, toty, qr_code
+                SELECT first_name, last_name, school_system, bringing_plus_one, checked_in, toty, qr_code, table_number
                 FROM attendees
                 WHERE year = %s
                 ORDER BY last_name, first_name
@@ -402,7 +402,7 @@ else:
             attendees = cur.fetchall()
 
             df = pd.DataFrame(attendees, 
-                            columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In', 'TOTY', 'QR Code'])
+                            columns=['First Name', 'Last Name', 'School System', 'Plus One', 'Checked In', 'TOTY', 'QR Code', 'Table'])
 
             # Create status column based on checked_in value
             df['Status'] = df['Checked In'].map({
