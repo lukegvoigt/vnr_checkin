@@ -484,9 +484,10 @@ else:
     with tab3:
         st.header("Import Attendees from CSV")
         st.write("Upload a CSV file with the following columns:")
-        st.code("Name, Email, Type, School System, ticket_id")
+        st.code("Name, Email, Type, School System, ticket_id, Table")
         st.write("**Type options:** School, Admin, TOTY, Guest, Sponsor, Rotary")
         st.write("**School System options:** Lowndes County, Valdosta City, N/A")
+        st.write("**Table:** Optional - table number for seating assignment")
         
         uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
         
@@ -524,6 +525,13 @@ else:
                                     school_system = str(row['School System']).strip() if pd.notna(row['School System']) else 'N/A'
                                     ticket_id = str(row['ticket_id']).strip() if pd.notna(row['ticket_id']) else ''
                                     
+                                    table_number = None
+                                    if 'Table' in row and pd.notna(row['Table']):
+                                        try:
+                                            table_number = int(row['Table'])
+                                        except:
+                                            table_number = None
+                                    
                                     toty_value = 0
                                     if attendee_type == 'TOTY':
                                         toty_value = 1
@@ -537,14 +545,14 @@ else:
                                         cur.execute("""
                                             UPDATE attendees 
                                             SET first_name = %s, last_name = %s, email = %s, status = %s, 
-                                                school_system = %s, toty = %s
+                                                school_system = %s, toty = %s, table_number = %s
                                             WHERE qr_code = %s
-                                        """, (first_name, last_name, email, status, school_system, toty_value, ticket_id))
+                                        """, (first_name, last_name, email, status, school_system, toty_value, table_number, ticket_id))
                                     else:
                                         cur.execute("""
-                                            INSERT INTO attendees (first_name, last_name, email, status, school_system, qr_code, checked_in, toty, year)
-                                            VALUES (%s, %s, %s, %s, %s, %s, 0, %s, 2026)
-                                        """, (first_name, last_name, email, status, school_system, ticket_id, toty_value))
+                                            INSERT INTO attendees (first_name, last_name, email, status, school_system, qr_code, checked_in, toty, year, table_number)
+                                            VALUES (%s, %s, %s, %s, %s, %s, 0, %s, 2026, %s)
+                                        """, (first_name, last_name, email, status, school_system, ticket_id, toty_value, table_number))
                                     success_count += 1
                                 except Exception as row_error:
                                     conn.rollback()
