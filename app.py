@@ -224,7 +224,7 @@ else:
 
                 # Search for matching names
                 cur.execute("""
-                    SELECT qr_code, first_name, last_name, school_system, status, checked_in, toty
+                    SELECT qr_code, first_name, last_name, school_system, status, checked_in, toty, table_number
                     FROM attendees 
                     WHERE LOWER(first_name) LIKE LOWER(%s) 
                     OR LOWER(last_name) LIKE LOWER(%s)
@@ -235,7 +235,12 @@ else:
 
                 if results:
                     for result in results:
-                        qr_code, first_name, last_name, school_system, status, checked_in, toty = result
+                        qr_code, first_name, last_name, school_system, status, checked_in, toty, table_number = result
+                        
+                        # Show seating banner if already checked in
+                        if checked_in > 0:
+                            display_seating_banner(status, table_number)
+                        
                         col1, col2 = st.columns([3, 1])
                         with col1:
                             st.write(f"**{first_name} {last_name}**")
@@ -261,6 +266,8 @@ else:
                                         WHERE qr_code = %s
                                     """, (check_in_value,qr_code))
                                     conn.commit()
+                                    # Show seating banner after check-in
+                                    display_seating_banner(status, table_number)
                                     st.rerun()
                             else:
                                 st.write("Already checked in")
