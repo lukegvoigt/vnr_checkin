@@ -224,7 +224,7 @@ else:
 
                 # Search for matching names
                 cur.execute("""
-                    SELECT qr_code, first_name, last_name, school_system, school_cleaned, status, checked_in, toty
+                    SELECT qr_code, first_name, last_name, school_system, status, checked_in, toty
                     FROM attendees 
                     WHERE LOWER(first_name) LIKE LOWER(%s) 
                     OR LOWER(last_name) LIKE LOWER(%s)
@@ -235,13 +235,11 @@ else:
 
                 if results:
                     for result in results:
-                        qr_code, first_name, last_name, school_system, school, status, checked_in, toty = result
-                        print(result)
+                        qr_code, first_name, last_name, school_system, status, checked_in, toty = result
                         col1, col2 = st.columns([3, 1])
                         with col1:
                             st.write(f"**{first_name} {last_name}**")
                             st.write(f"School System: {school_system}")
-                            st.write(f"School: {school}")
                             st.write(f"Type: {status}")
                             if toty == 1:
                                 st.markdown(":green[Teacher of the Year!]")
