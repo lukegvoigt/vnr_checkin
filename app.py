@@ -49,7 +49,7 @@ def get_attendee_info(code):
             conn.close()
 
 def display_seating_banner(status, table_number):
-    if status == 'Admin':
+    if status in ['Admin', 'Administration']:
         st.markdown("""
             <div style="background-color: #28a745; color: white; padding: 15px; border-radius: 10px; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 15px;">
                 Admin Table
